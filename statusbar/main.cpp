@@ -147,7 +147,16 @@ void displayMemory( SB::Window & window, const SB::MemoryInfo & memory )
 
 void displayBattery( SB::Window & window, const SB::BatteryInfo & battery )
 {
-    window.print( SB::Color::yellow(), SB::Color::clear(), "\uf240  Battery: %lli%%", battery.capacity() );
+    int64_t      capacity = battery.capacity();
+    const char * icon;
+
+         if( capacity >= 80 ) { icon = "\uf240"; }
+    else if( capacity >= 60 ) { icon = "\uf241"; }
+    else if( capacity >= 40 ) { icon = "\uf242"; }
+    else if( capacity >= 20 ) { icon = "\uf243"; }
+    else                      { icon = "\uf244"; }
+
+    window.print( SB::Color::yellow(), SB::Color::clear(), "%s  Battery: %lli%%", icon, capacity );
 
     if( battery.isCharging() )
     {
