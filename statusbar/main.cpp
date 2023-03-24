@@ -25,11 +25,13 @@
 #include "SB/Screen.hpp"
 #include "SB/CPULoad.hpp"
 #include "SB/BatteryInfo.hpp"
+#include "SB/MemoryInfo.hpp"
 #include "SB/String.hpp"
 #include "SB/Window.hpp"
 #include <locale.h>
 
 void displayCPU(     SB::Window & window, const SB::CPULoad & cpu );
+void displayMemory(  SB::Window & window, const SB::MemoryInfo & memory );
 void displayBattery( SB::Window & window, const SB::BatteryInfo & battery );
 void displayDate(    SB::Window & window, time_t time );
 void displayHour(    SB::Window & window, time_t time );
@@ -60,13 +62,20 @@ int main( int argc, const char * argv[] )
             [ & ]
             {
                 SB::CPULoad cpu         = SB::CPULoad::current();
+                SB::MemoryInfo  memory  = SB::MemoryInfo::current();
                 SB::BatteryInfo battery = SB::BatteryInfo::current();
 
                 SB::Window left( 0, 0, screen.width() - 30, screen.height() );
                 SB::Window right( screen.width() - 30, 0, 30, screen.height() );
 
-                displayCPU( left, SB::CPULoad::current() );
+                displayCPU( left, cpu );
 
+                if( memory.total() != 0 )
+                {
+                    left.print( "    " );
+                    displayMemory( left, memory );
+                }
+                
                 if( battery.isAvailable() )
                 {
                     left.print( "    " );
@@ -84,6 +93,7 @@ int main( int argc, const char * argv[] )
 
         SB::CPULoad::startObserving();
         SB::BatteryInfo::startObserving();
+        SB::MemoryInfo::startObserving();
         screen.start();
     }
 
@@ -109,9 +119,35 @@ void displayCPU( SB::Window & window, const SB::CPULoad & cpu )
     window.print( SB::Color::red(), SB::Color::clear(), " \uf007 %.0f%% \uf013 %.0f%%", cpu.user(), cpu.system() );
 }
 
+void displayMemory( SB::Window & window, const SB::MemoryInfo & memory )
+{
+    window.print( SB::Color::blue(), SB::Color::clear(), "\uf1c0 Memory %.0f%% : ", memory.percentUsed() );
+
+    for( int i = 0; i < 10; i++ )
+    {
+        if( memory.percentUsed() / 10 < i )
+        {
+            window.print( SB::Color::blue(), SB::Color::clear(), "\uf096 " );
+        }
+        else
+        {
+            window.print( SB::Color::blue(), SB::Color::clear(), "\uf0c8 " );
+        }
+    }
+
+    window.print
+    (
+        SB::Color::blue(),
+        SB::Color::clear(),
+        " %s / %s",
+        SB::String::bytesToHumanReadable( memory.used() ).c_str(),
+        SB::String::bytesToHumanReadable( memory.total() ).c_str()
+    );
+}
+
 void displayBattery( SB::Window & window, const SB::BatteryInfo & battery )
 {
-    window.print( SB::Color::yellow(), SB::Color::clear(), "\uf241  Battery: %lli%%", battery.capacity() );
+    window.print( SB::Color::yellow(), SB::Color::clear(), "\uf240  Battery: %lli%%", battery.capacity() );
 
     if( battery.isCharging() )
     {

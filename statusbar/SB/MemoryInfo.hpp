@@ -22,18 +22,48 @@
  * THE SOFTWARE.
  ******************************************************************************/
 
-#ifndef SB_STRING_HPP
-#define SB_STRING_HPP
+#ifndef SB_MEMORY_INFO_HPP
+#define SB_MEMORY_INFO_HPP
 
-#include <string>
+#include <memory>
+#include <algorithm>
+#include <vector>
+#include <cstdint>
 
 namespace SB
 {
-    namespace String
+    class MemoryInfo
     {
-        std::string format( const char * format, ... ) __printflike( 1, 2 );
-        std::string bytesToHumanReadable( uint64_t bytes );
-    }
+        public:
+
+            static void       startObserving();
+            static MemoryInfo current();
+
+            MemoryInfo( const MemoryInfo & o );
+            MemoryInfo( MemoryInfo && o ) noexcept;
+            ~MemoryInfo();
+
+            MemoryInfo & operator =( MemoryInfo o );
+
+            uint64_t total()       const;
+            uint64_t wired()       const;
+            uint64_t active()      const;
+            uint64_t inactive()    const;
+            uint64_t free()        const;
+            uint64_t purgeable()   const;
+            uint64_t speculative() const;
+            uint64_t used()        const;
+            double   percentUsed() const;
+
+            friend void swap( MemoryInfo & o1, MemoryInfo & o2 );
+
+        private:
+
+            MemoryInfo( uint64_t total, uint64_t wired, uint64_t active, uint64_t inactive, uint64_t free, uint64_t purgeable, uint64_t speculative );
+
+            class IMPL;
+            std::unique_ptr< IMPL > impl;
+    };
 }
 
-#endif /* SB_STRING_HPP */
+#endif /* SB_MEMORY_INFO_HPP */

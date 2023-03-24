@@ -57,5 +57,27 @@ namespace SB
             
             return s;
         }
+
+        std::string bytesToHumanReadable( uint64_t bytes )
+        {
+            if( bytes < 1024ULL )
+            {
+                return String::format( "%lluB", bytes );
+            }
+            else if( bytes < 1024ULL * 1024ULL )
+            {
+                return String::format( "%.02fKB", static_cast< double >( bytes ) / static_cast< double >( 1024ULL ) );
+            }
+            else if( bytes < 1024ULL * 1024ULL * 1024ULL )
+            {
+                return String::format( "%.02fMB", static_cast< double >( bytes ) / static_cast< double >( 1024ULL * 1024ULL ) );
+            }
+            else if( bytes < 1024ULL * 1024ULL * 1024ULL * 1024ULL )
+            {
+                return String::format( "%.02fGB", static_cast< double >( bytes ) / static_cast< double >( 1024ULL * 1024ULL * 1024ULL ) );
+            }
+
+            return String::format( "%.02fTB", static_cast< double >( bytes ) / static_cast< double >( 1024ULL * 1024ULL * 1024ULL * 1024ULL ) );
+        }
     }
 }
