@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		053B4B1822F5F60D002C6AB9 /* Color.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 053B4B1622F5F60D002C6AB9 /* Color.cpp */; };
+		0566DDBC29CE13380031F6CC /* TemperatureInfo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0566DDBA29CE13380031F6CC /* TemperatureInfo.cpp */; };
 		0581834422E9ACFF008D1BFF /* Screen.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0581834222E9ACFF008D1BFF /* Screen.cpp */; };
 		0581834A22E9AE24008D1BFF /* libncurses.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 0581834922E9AE24008D1BFF /* libncurses.tbd */; };
 		05B2813322E77AC700110404 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 05B2813222E77AC700110404 /* main.cpp */; };
@@ -36,6 +37,9 @@
 /* Begin PBXFileReference section */
 		053B4B1622F5F60D002C6AB9 /* Color.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Color.cpp; sourceTree = "<group>"; };
 		053B4B1722F5F60D002C6AB9 /* Color.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Color.hpp; sourceTree = "<group>"; };
+		0566DDBA29CE13380031F6CC /* TemperatureInfo.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = TemperatureInfo.cpp; sourceTree = "<group>"; };
+		0566DDBB29CE13380031F6CC /* TemperatureInfo.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = TemperatureInfo.hpp; sourceTree = "<group>"; };
+		0566DDBD29CE18070031F6CC /* IOHID-Internal.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "IOHID-Internal.h"; sourceTree = "<group>"; };
 		0581831D22E8DC5C008D1BFF /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		0581834222E9ACFF008D1BFF /* Screen.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Screen.cpp; sourceTree = "<group>"; };
 		0581834322E9ACFF008D1BFF /* Screen.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Screen.hpp; sourceTree = "<group>"; };
@@ -278,12 +282,15 @@
 				05C965E529CC6BF60091F341 /* ColorPair.hpp */,
 				05D670DD29CCDC36000B2F56 /* CPULoad.cpp */,
 				05D670DE29CCDC36000B2F56 /* CPULoad.hpp */,
+				0566DDBD29CE18070031F6CC /* IOHID-Internal.h */,
 				05D6711729CDF5CE000B2F56 /* MemoryInfo.cpp */,
 				05D6711829CDF5CE000B2F56 /* MemoryInfo.hpp */,
 				0581834222E9ACFF008D1BFF /* Screen.cpp */,
 				0581834322E9ACFF008D1BFF /* Screen.hpp */,
 				05D670E029CCEF54000B2F56 /* String.cpp */,
 				05D670E129CCEF54000B2F56 /* String.hpp */,
+				0566DDBA29CE13380031F6CC /* TemperatureInfo.cpp */,
+				0566DDBB29CE13380031F6CC /* TemperatureInfo.hpp */,
 				05D670E429CCF3CA000B2F56 /* Vector.hpp */,
 				05D670F429CDDA2E000B2F56 /* Window.cpp */,
 				05D670F529CDDA2E000B2F56 /* Window.hpp */,
@@ -350,6 +357,7 @@
 			files = (
 				05D670F629CDDA2E000B2F56 /* Window.cpp in Sources */,
 				05B2813322E77AC700110404 /* main.cpp in Sources */,
+				0566DDBC29CE13380031F6CC /* TemperatureInfo.cpp in Sources */,
 				0581834422E9ACFF008D1BFF /* Screen.cpp in Sources */,
 				053B4B1822F5F60D002C6AB9 /* Color.cpp in Sources */,
 				05C965E629CC6BF60091F341 /* ColorPair.cpp in Sources */,

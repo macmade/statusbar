@@ -26,15 +26,17 @@
 #include "SB/CPULoad.hpp"
 #include "SB/BatteryInfo.hpp"
 #include "SB/MemoryInfo.hpp"
+#include "SB/TemperatureInfo.hpp"
 #include "SB/String.hpp"
 #include "SB/Window.hpp"
 #include <locale.h>
 
-void displayCPU(     SB::Window & window, const SB::CPULoad & cpu );
-void displayMemory(  SB::Window & window, const SB::MemoryInfo & memory );
-void displayBattery( SB::Window & window, const SB::BatteryInfo & battery );
-void displayDate(    SB::Window & window, time_t time );
-void displayHour(    SB::Window & window, time_t time );
+void displayCPU(         SB::Window & window, const SB::CPULoad & cpu );
+void displayMemory(      SB::Window & window, const SB::MemoryInfo & memory );
+void displayBattery(     SB::Window & window, const SB::BatteryInfo & battery );
+void displayTemperature( SB::Window & window, const SB::TemperatureInfo & temperature );
+void displayDate(        SB::Window & window, time_t time );
+void displayHour(        SB::Window & window, time_t time );
 
 int main( int argc, const char * argv[] )
 {
@@ -61,16 +63,17 @@ int main( int argc, const char * argv[] )
         (
             [ & ]
             {
-                SB::CPULoad cpu         = SB::CPULoad::current();
-                SB::MemoryInfo  memory  = SB::MemoryInfo::current();
-                SB::BatteryInfo battery = SB::BatteryInfo::current();
+                SB::CPULoad         cpu         = SB::CPULoad::current();
+                SB::MemoryInfo      memory      = SB::MemoryInfo::current();
+                SB::BatteryInfo     battery     = SB::BatteryInfo::current();
+                SB::TemperatureInfo temperature = SB::TemperatureInfo::current();
 
                 SB::Window left( 0, 0, screen.width() - 30, screen.height() );
                 SB::Window right( screen.width() - 30, 0, 30, screen.height() );
 
                 displayCPU( left, cpu );
 
-                if( memory.total() != 0 )
+                if( memory.total() > 0 )
                 {
                     left.print( "    " );
                     displayMemory( left, memory );
@@ -80,6 +83,12 @@ int main( int argc, const char * argv[] )
                 {
                     left.print( "    " );
                     displayBattery( left, battery );
+                }
+
+                if( temperature.temperature() > 0 )
+                {
+                    left.print( "    " );
+                    displayTemperature( left, temperature );
                 }
 
                 displayDate( right, time( nullptr ) );
@@ -94,6 +103,7 @@ int main( int argc, const char * argv[] )
         SB::CPULoad::startObserving();
         SB::BatteryInfo::startObserving();
         SB::MemoryInfo::startObserving();
+        SB::TemperatureInfo::startObserving();
         screen.start();
     }
 
@@ -102,21 +112,21 @@ int main( int argc, const char * argv[] )
 
 void displayCPU( SB::Window & window, const SB::CPULoad & cpu )
 {
-    window.print( SB::Color::red(), SB::Color::clear(), "\uf2db CPU: %.0f%% ", cpu.total() );
+    window.print( SB::Color::green(), SB::Color::clear(), "\uf2db CPU: %.0f%% ", cpu.total() );
 
     for( int i = 0; i < 10; i++ )
     {
         if( cpu.total() / 10 < i )
         {
-            window.print( SB::Color::red(), SB::Color::clear(), "\uf096 " );
+            window.print( SB::Color::green(), SB::Color::clear(), "\uf096 " );
         }
         else
         {
-            window.print( SB::Color::red(), SB::Color::clear(), "\uf0c8 " );
+            window.print( SB::Color::green(), SB::Color::clear(), "\uf0c8 " );
         }
     }
 
-    window.print( SB::Color::red(), SB::Color::clear(), " \uf007 %.0f%% \uf013 %.0f%%", cpu.user(), cpu.system() );
+    window.print( SB::Color::green(), SB::Color::clear(), " \uf007 %.0f%% \uf013 %.0f%%", cpu.user(), cpu.system() );
 }
 
 void displayMemory( SB::Window & window, const SB::MemoryInfo & memory )
@@ -162,6 +172,11 @@ void displayBattery( SB::Window & window, const SB::BatteryInfo & battery )
     {
         window.print( SB::Color::yellow(), SB::Color::clear(), " \uf0e7 " );
     }
+}
+
+void displayTemperature( SB::Window & window, const SB::TemperatureInfo & temperature )
+{
+    window.print( SB::Color::red(), SB::Color::clear(), " \uf2c7 Temperature: %.0f°", temperature.temperature() );
 }
 
 void displayDate( SB::Window & window, time_t time )
