@@ -25,6 +25,7 @@
 #include "SB/TemperatureInfo.hpp"
 #include "SB/Vector.hpp"
 #include "SB/String.hpp"
+#include "SB/UpdateQueue.hpp"
 #include "SB/IOHID.hpp"
 #include "SB/SMC.hpp"
 #include <mutex>
@@ -46,7 +47,7 @@ namespace SB
             double _temperature;
 
             static void                  init();
-            static void                  observe() __attribute__( ( noreturn ) );
+            static void                  observe();
             static TemperatureInfo       getTemperatureInfo();
             static std::vector< double > readHIDSensors( double & tcal );
             static std::vector< double > readSMCSensors();
@@ -73,7 +74,7 @@ namespace SB
 
         IMPL::observing = true;
 
-        std::thread( [] { TemperatureInfo::IMPL::observe(); } ).detach();
+        SB::UpdateQueue::shared().registerUpdate( [] { IMPL::observe(); } );
     }
 
     TemperatureInfo TemperatureInfo::current()
@@ -164,19 +165,14 @@ namespace SB
 
     void TemperatureInfo::IMPL::observe()
     {
-        while( true )
+        TemperatureInfo current = IMPL::getTemperatureInfo();
+
         {
-            TemperatureInfo current = IMPL::getTemperatureInfo();
+            std::lock_guard< std::recursive_mutex > l( *( IMPL::rmtx ) );
 
-            {
-                std::lock_guard< std::recursive_mutex > l( *( IMPL::rmtx ) );
+            delete IMPL::info;
 
-                delete IMPL::info;
-
-                IMPL::info = new TemperatureInfo( current );
-            }
-
-            std::this_thread::sleep_for( std::chrono::seconds( 1 ) );
+            IMPL::info = new TemperatureInfo( current );
         }
     }
 

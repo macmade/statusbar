@@ -23,6 +23,7 @@
  ******************************************************************************/
 
 #include "SB/NetworkInfo.hpp"
+#include "SB/UpdateQueue.hpp"
 #include <mutex>
 #include <thread>
 #include <ifaddrs.h>
@@ -44,7 +45,7 @@ namespace SB
             std::string _address;
 
             static void        init();
-            static void        observe() __attribute__( ( noreturn ) );
+            static void        observe();
             static NetworkInfo getNetworkInfo();
 
             static std::recursive_mutex * rmtx;
@@ -64,7 +65,7 @@ namespace SB
 
         IMPL::observing = true;
 
-        std::thread( [] { NetworkInfo::IMPL::observe(); } ).detach();
+        SB::UpdateQueue::shared().registerUpdate( [] { IMPL::observe(); } );
     }
 
     NetworkInfo NetworkInfo::current()
@@ -144,19 +145,14 @@ namespace SB
 
     void NetworkInfo::IMPL::observe()
     {
-        while( true )
+        NetworkInfo current = IMPL::getNetworkInfo();
+
         {
-            NetworkInfo current = IMPL::getNetworkInfo();
+            std::lock_guard< std::recursive_mutex > l( *( IMPL::rmtx ) );
 
-            {
-                std::lock_guard< std::recursive_mutex > l( *( IMPL::rmtx ) );
+            delete IMPL::info;
 
-                delete IMPL::info;
-
-                IMPL::info = new NetworkInfo( current );
-            }
-
-            std::this_thread::sleep_for( std::chrono::seconds( 1 ) );
+            IMPL::info = new NetworkInfo( current );
         }
     }
 

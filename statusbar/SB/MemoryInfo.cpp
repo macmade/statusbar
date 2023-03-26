@@ -23,6 +23,7 @@
  ******************************************************************************/
 
 #include "SB/MemoryInfo.hpp"
+#include "SB/UpdateQueue.hpp"
 #include <mutex>
 #include <thread>
 #include <sys/sysctl.h>
@@ -50,7 +51,7 @@ namespace SB
             uint64_t _speculative;
 
             static void       init();
-            static void       observe() __attribute__( ( noreturn ) );
+            static void       observe();
             static MemoryInfo getMemoryInfo();
 
             static std::recursive_mutex * rmtx;
@@ -70,7 +71,7 @@ namespace SB
 
         IMPL::observing = true;
 
-        std::thread( [] { MemoryInfo::IMPL::observe(); } ).detach();
+        SB::UpdateQueue::shared().registerUpdate( [] { IMPL::observe(); } );
     }
 
     MemoryInfo MemoryInfo::current()
@@ -203,19 +204,14 @@ namespace SB
 
     void MemoryInfo::IMPL::observe()
     {
-        while( true )
+        MemoryInfo current = IMPL::getMemoryInfo();
+
         {
-            MemoryInfo current = IMPL::getMemoryInfo();
+            std::lock_guard< std::recursive_mutex > l( *( IMPL::rmtx ) );
 
-            {
-                std::lock_guard< std::recursive_mutex > l( *( IMPL::rmtx ) );
+            delete IMPL::info;
 
-                delete IMPL::info;
-
-                IMPL::info = new MemoryInfo( current );
-            }
-
-            std::this_thread::sleep_for( std::chrono::seconds( 1 ) );
+            IMPL::info = new MemoryInfo( current );
         }
     }
 

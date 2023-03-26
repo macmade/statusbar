@@ -13,6 +13,7 @@
 		0566DDD729CE7A850031F6CC /* SMC.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0566DDD529CE7A850031F6CC /* SMC.cpp */; };
 		0566DDDC29D09C040031F6CC /* Options.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0566DDDA29D09C040031F6CC /* Options.cpp */; };
 		0566DDF229D0A9D50031F6CC /* NetworkInfo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0566DDF029D0A9D50031F6CC /* NetworkInfo.cpp */; };
+		0566DDF529D0B0900031F6CC /* UpdateQueue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0566DDF329D0B0900031F6CC /* UpdateQueue.cpp */; };
 		0581834422E9ACFF008D1BFF /* Screen.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0581834222E9ACFF008D1BFF /* Screen.cpp */; };
 		0581834A22E9AE24008D1BFF /* libncurses.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 0581834922E9AE24008D1BFF /* libncurses.tbd */; };
 		05B2813322E77AC700110404 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 05B2813222E77AC700110404 /* main.cpp */; };
@@ -53,6 +54,8 @@
 		0566DDDB29D09C040031F6CC /* Options.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Options.hpp; sourceTree = "<group>"; };
 		0566DDF029D0A9D50031F6CC /* NetworkInfo.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = NetworkInfo.cpp; sourceTree = "<group>"; };
 		0566DDF129D0A9D50031F6CC /* NetworkInfo.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = NetworkInfo.hpp; sourceTree = "<group>"; };
+		0566DDF329D0B0900031F6CC /* UpdateQueue.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = UpdateQueue.cpp; sourceTree = "<group>"; };
+		0566DDF429D0B0900031F6CC /* UpdateQueue.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = UpdateQueue.hpp; sourceTree = "<group>"; };
 		0581831D22E8DC5C008D1BFF /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		0581834222E9ACFF008D1BFF /* Screen.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Screen.cpp; sourceTree = "<group>"; };
 		0581834322E9ACFF008D1BFF /* Screen.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Screen.hpp; sourceTree = "<group>"; };
@@ -313,6 +316,8 @@
 				05D670E129CCEF54000B2F56 /* String.hpp */,
 				0566DDBA29CE13380031F6CC /* TemperatureInfo.cpp */,
 				0566DDBB29CE13380031F6CC /* TemperatureInfo.hpp */,
+				0566DDF329D0B0900031F6CC /* UpdateQueue.cpp */,
+				0566DDF429D0B0900031F6CC /* UpdateQueue.hpp */,
 				05D670E429CCF3CA000B2F56 /* Vector.hpp */,
 				05D670F429CDDA2E000B2F56 /* Window.cpp */,
 				05D670F529CDDA2E000B2F56 /* Window.hpp */,
@@ -377,6 +382,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0566DDF529D0B0900031F6CC /* UpdateQueue.cpp in Sources */,
 				05D670F629CDDA2E000B2F56 /* Window.cpp in Sources */,
 				05B2813322E77AC700110404 /* main.cpp in Sources */,
 				0566DDBC29CE13380031F6CC /* TemperatureInfo.cpp in Sources */,
