@@ -195,6 +195,7 @@ namespace SB
 
             CFStringRef  type     = reinterpret_cast< CFStringRef  >( CFDictionaryGetValue( description, CFSTR( "Type" ) ) );
             CFBooleanRef charging = reinterpret_cast< CFBooleanRef >( CFDictionaryGetValue( description, CFSTR( "Is Charging" ) ) );
+            CFBooleanRef charged  = reinterpret_cast< CFBooleanRef >( CFDictionaryGetValue( description, CFSTR( "Is Charged" ) ) );
             CFNumberRef  capacity = reinterpret_cast< CFNumberRef  >( CFDictionaryGetValue( description, CFSTR( "Current Capacity" ) ) );
 
             if( type == nullptr || CFGetTypeID( type ) != CFStringGetTypeID() || CFEqual( type, CFSTR( "InternalBattery" ) ) == false )
@@ -219,7 +220,12 @@ namespace SB
             CFRelease( sources );
             CFRelease( blob );
 
-            return { currentCapacity, CFBooleanGetValue( charging ) == 1, true };
+            return
+            {
+                currentCapacity,
+                CFBooleanGetValue( charging ) == 1 || ( charged != nullptr && CFBooleanGetValue( charged ) == 1 ),
+                true
+            };
         }
 
         CFRelease( sources );
