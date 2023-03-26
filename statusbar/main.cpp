@@ -25,6 +25,7 @@
 #include "SB/Screen.hpp"
 #include "SB/CPULoad.hpp"
 #include "SB/BatteryInfo.hpp"
+#include "SB/Options.hpp"
 #include "SB/MemoryInfo.hpp"
 #include "SB/TemperatureInfo.hpp"
 #include "SB/String.hpp"
@@ -41,11 +42,23 @@ void displayHour(        SB::Window & window, time_t time );
 
 int main( int argc, const char * argv[] )
 {
-    ( void )argc;
-    ( void )argv;
+    SB::Options options = { argc, argv };
+
+    SB::CPULoad::startObserving();
+    SB::BatteryInfo::startObserving();
+    SB::MemoryInfo::startObserving();
+    SB::TemperatureInfo::startObserving();
 
     setlocale( LC_ALL, "" );
 
+    if( options.debug() )
+    {
+        while( true )
+        {
+            std::this_thread::sleep_for( std::chrono::seconds( 1 ) );
+        }
+    }
+    else
     {
         SB::Screen & screen = SB::Screen::shared();
 
@@ -101,10 +114,6 @@ int main( int argc, const char * argv[] )
             }
         );
 
-        SB::CPULoad::startObserving();
-        SB::BatteryInfo::startObserving();
-        SB::MemoryInfo::startObserving();
-        SB::TemperatureInfo::startObserving();
         screen.start();
     }
 
