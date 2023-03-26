@@ -22,20 +22,19 @@
  * THE SOFTWARE.
  ******************************************************************************/
 
-#ifndef SB_STRING_HPP
-#define SB_STRING_HPP
+#ifndef SB_IOHID_HPP
+#define SB_IOHID_HPP
 
+#include "SB/IOHID-Internal.h"
+#include <map>
 #include <string>
 
 namespace SB
 {
-    namespace String
+    namespace IOHID
     {
-        std::string format( const char * format, ... ) __printflike( 1, 2 );
-        std::string bytesToHumanReadable( uint64_t bytes );
-        bool        hasSuffix( const std::string & str, const std::string & suffix );
-        std::string fourCC( uint32_t c );
+        std::map< std::string, double > read( IOHIDEventSystemClientRef client, int64_t page, int64_t usage, int64_t eventType, int64_t eventField );
     }
 }
 
-#endif /* SB_STRING_HPP */
+#endif /* SB_IOHID_HPP */

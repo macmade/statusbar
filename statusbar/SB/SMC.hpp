@@ -22,20 +22,29 @@
  * THE SOFTWARE.
  ******************************************************************************/
 
-#ifndef SB_STRING_HPP
-#define SB_STRING_HPP
+#ifndef SB_SMC_HPP
+#define SB_SMC_HPP
 
-#include <string>
+#include "SB/SMC-Internal.h"
+#include <cstdint>
+#include <map>
 
 namespace SB
 {
-    namespace String
+    namespace SMC
     {
-        std::string format( const char * format, ... ) __printflike( 1, 2 );
-        std::string bytesToHumanReadable( uint64_t bytes );
-        bool        hasSuffix( const std::string & str, const std::string & suffix );
-        std::string fourCC( uint32_t c );
+        bool     callSMCFunction( io_connect_t connection, uint32_t function, const SMCParamStruct & input, SMCParamStruct & output );
+        bool     readSMCKeyInfo( io_connect_t connection, SMCKeyInfoData & info, uint32_t key, std::map< uint32_t, SMCKeyInfoData > & cache );
+        bool     readSMCKey( io_connect_t connection, uint32_t & key, uint32_t index );
+        bool     readSMCKey( io_connect_t connection, uint32_t key, uint8_t * buffer, uint32_t & maxSize, SMCKeyInfoData & keyInfo, std::map< uint32_t, SMCKeyInfoData > & cache );
+        uint32_t readSMCKeyCount( io_connect_t connection, std::map< uint32_t, SMCKeyInfoData > & cache );
+        uint32_t readInteger( uint8_t * data, uint32_t size );
+        uint32_t readUInt32( uint8_t * data, uint32_t size );
+        uint64_t readUInt64( uint8_t * data, uint32_t size );
+        double   readFloat32( uint8_t * data, uint32_t size );
+        double   readFloat32( uint8_t * data, uint32_t size );
+        double   readIOFloat( uint8_t * data, uint32_t size );
     }
 }
 
-#endif /* SB_STRING_HPP */
+#endif /* SB_SMC_HPP */

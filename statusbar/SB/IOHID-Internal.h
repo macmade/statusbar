@@ -135,7 +135,7 @@ extern "C"
 {
     extern IOHIDEventSystemClientRef IOHIDEventSystemClientCreate( CFAllocatorRef );
     extern void                      IOHIDEventSystemClientSetMatching( IOHIDEventSystemClientRef, CFDictionaryRef );
-    extern CFTypeRef                 IOHIDServiceClientCopyEvent( IOHIDServiceClientRef, IOHIDEvent, int64_t, int64_t );
+    extern CFTypeRef                 IOHIDServiceClientCopyEvent( IOHIDServiceClientRef, int64_t, int64_t, int64_t );
     extern CFDictionaryRef           IOHIDServiceClientCopyProperties( IOHIDServiceClientRef, CFArrayRef );
     extern double                    IOHIDEventGetFloatValue( CFTypeRef, int64_t );
 }

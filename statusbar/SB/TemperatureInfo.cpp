@@ -24,7 +24,9 @@
 
 #include "SB/TemperatureInfo.hpp"
 #include "SB/Vector.hpp"
-#include "SB/IOHID-Internal.h"
+#include "SB/String.hpp"
+#include "SB/IOHID.hpp"
+#include "SB/SMC.hpp"
 #include <mutex>
 #include <thread>
 #include <vector>
@@ -49,10 +51,14 @@ namespace SB
             static std::vector< double > readHIDSensors( double & tcal );
             static std::vector< double > readSMCSensors();
 
-            static std::recursive_mutex    * rmtx;
-            static TemperatureInfo         * info;
-            static bool                      observing;
-            static IOHIDEventSystemClientRef hidClient;
+            static std::recursive_mutex                 * rmtx;
+            static TemperatureInfo                      * info;
+            static bool                                   observing;
+            static IOHIDEventSystemClientRef              hidClient;
+            static io_connect_t                           smcConnection;
+            static std::vector< uint32_t >              * smcKeys;
+            static std::map< uint32_t, SMCKeyInfoData > * smcCache;
+
     };
 
     void TemperatureInfo::startObserving()
@@ -132,9 +138,26 @@ namespace SB
             once,
             []
             {
-                rmtx      = new std::recursive_mutex();
-                info      = new TemperatureInfo( 0 );
-                hidClient = IOHIDEventSystemClientCreate( kCFAllocatorDefault );
+                IMPL::rmtx      = new std::recursive_mutex();
+                IMPL::info      = new TemperatureInfo( 0 );
+                IMPL::hidClient = IOHIDEventSystemClientCreate( kCFAllocatorDefault );
+                IMPL::smcKeys   = new std::vector< uint32_t >();
+                IMPL::smcCache  = new std::map< uint32_t, SMCKeyInfoData >();
+
+                {
+                    io_service_t smc = IOServiceGetMatchingService( kIOMasterPortDefault, IOServiceMatching( "AppleSMC" ) );
+
+                    if( smc != IO_OBJECT_NULL )
+                    {
+                        io_connect_t  connection = IO_OBJECT_NULL;
+                        kern_return_t result     = IOServiceOpen( smc, mach_task_self(), 0, &connection );
+
+                        if( result == kIOReturnSuccess && connection != IO_OBJECT_NULL )
+                        {
+                            IMPL::smcConnection = connection;
+                        }
+                    }
+                }
             }
         );
     }
@@ -165,8 +188,13 @@ namespace SB
         (
             IMPL::readSMCSensors(),
             0.0,
-            []( double a, double b )
+            [ & ]( double a, double b )
             {
+                if( static_cast< int64_t >( tcal * 100 ) == static_cast< int64_t >( b * 100 ) )
+                {
+                    return a;
+                }
+
                 return ( a > b ) ? a : b;
             }
         );
@@ -176,78 +204,110 @@ namespace SB
 
     std::vector< double > TemperatureInfo::IMPL::readHIDSensors( double & tcal )
     {
+        std::vector< double >           sensors;
+        std::map< std::string, double > values = IOHID::read
+        (
+            IMPL::hidClient,
+            static_cast< int64_t >( IOHIDPage::IOHIDPageAppleVendor ),
+            static_cast< int64_t >( IOHIDUsageAppleVendor::IOHIDUsageAppleVendorTemperatureSensor ),
+            static_cast< int64_t >( IOHIDEvent::IOHIDEventTypeTemperature ),
+            static_cast< int64_t >( IOHIDEventField::IOHIDEventFieldTemperatureLevel )
+        );
+
         tcal = 0;
 
-        if( IMPL::hidClient == nullptr )
+        for( const auto & p: values )
         {
-            return {};
-        }
-
-        CFDictionaryRef filter = nullptr;
-
-        {
-            int64_t     page    = static_cast< int64_t >( IOHIDPage::IOHIDPageAppleVendor );
-            int64_t     usage   = static_cast< int64_t >( IOHIDUsageAppleVendor::IOHIDUsageAppleVendorTemperatureSensor );
-            CFNumberRef cfPage  = CFNumberCreate( nullptr, kCFNumberSInt64Type, &page );
-            CFNumberRef cfUsage = CFNumberCreate( nullptr, kCFNumberSInt64Type, &usage );
-
-            CFTypeRef keys[]   = { CFSTR( "PrimaryUsagePage" ), CFSTR( "PrimaryUsage" ) };
-            CFTypeRef values[] = { cfPage, cfUsage };
-
-            filter = CFDictionaryCreate( nullptr, keys, values, 2, &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks );
-
-            CFRelease( cfPage );
-            CFRelease( cfUsage );
-        }
-
-        IOHIDEventSystemClientSetMatching( IMPL::hidClient, filter );
-        CFRelease( filter );
-
-        CFArrayRef services = IOHIDEventSystemClientCopyServices( IMPL::hidClient );
-
-        if( services == nullptr )
-        {
-            return {};
-        }
-
-        std::vector< double > values;
-
-        for( CFIndex i = 0; i < CFArrayGetCount( services ); i++ )
-        {
-            IOHIDServiceClientRef service = reinterpret_cast< IOHIDServiceClientRef >( const_cast< void * >( CFArrayGetValueAtIndex( services, i ) ) );
-            CFStringRef           name    = reinterpret_cast< CFStringRef >( IOHIDServiceClientCopyProperty( service, CFSTR( "Product" ) ) );
-            CFTypeRef             event   = IOHIDServiceClientCopyEvent( service, IOHIDEvent::IOHIDEventTypeTemperature, 0, 0 );
-
-            if( name != nullptr && event != nullptr )
+            if( String::hasSuffix( p.first, "tcal" ) )
             {
-                double value = IOHIDEventGetFloatValue( event, static_cast< int64_t >( IOHIDEventField::IOHIDEventFieldTemperatureLevel ) );
-
-                if( CFStringHasSuffix( name, CFSTR( "tcal" ) ) )
-                {
-                    tcal = value;
-                }
-                else
-                {
-                    values.push_back( value );
-                }
+                tcal = p.second;
             }
-
-            if( name  != nullptr ) { CFRelease( name ); }
-            if( event != nullptr ) { CFRelease( event ); }
+            else
+            {
+                sensors.push_back( p.second );
+            }
         }
 
-        CFRelease( services );
-
-        return values;
+        return sensors;
     }
 
     std::vector< double > TemperatureInfo::IMPL::readSMCSensors()
     {
-        return {};
+        if( IMPL::smcConnection == IO_OBJECT_NULL )
+        {
+            return {};
+        }
+
+        if( IMPL::smcKeys->size() == 0 )
+        {
+            uint32_t count = SMC::readSMCKeyCount( IMPL::smcConnection, *( IMPL::smcCache ) );
+
+            for( uint32_t i = 0; i < count; i++ )
+            {
+                uint32_t key = 0;
+
+                if( SMC::readSMCKey( IMPL::smcConnection, key, i ) == false )
+                {
+                    continue;
+                }
+
+                if( key != 0 )
+                {
+                    IMPL::smcKeys->push_back( key );
+                }
+            }
+        }
+
+        std::vector< double > sensors;
+
+        for( auto key: *( IMPL::smcKeys ) )
+        {
+            SMCKeyInfoData keyInfo;
+            uint8_t        data[ 32 ];
+            uint32_t       size = sizeof( data );
+
+            if( SMC::readSMCKey( IMPL::smcConnection, key, data, size, keyInfo, *( IMPL::smcCache ) ) == false )
+            {
+                continue;
+            }
+
+            std::string name = String::fourCC( key );
+            std::string type = String::fourCC( keyInfo.dataType );
+
+            if( name.length() == 0 || name[ 0 ] != 'T' )
+            {
+                continue;
+            }
+
+            double value = 0;
+
+            if( type == "ioft" )
+            {
+                value = SMC::readIOFloat( data, size );
+            }
+            else if( type == "flt " )
+            {
+                value = SMC::readFloat32( data, size );
+            }
+
+            if( value > 0 && value < 120 )
+            {
+                sensors.push_back( value );
+            }
+            else
+            {
+                continue;
+            }
+        }
+
+        return sensors;
     }
 
-    std::recursive_mutex    * TemperatureInfo::IMPL::rmtx      = nullptr;
-    TemperatureInfo         * TemperatureInfo::IMPL::info      = nullptr;
-    bool                      TemperatureInfo::IMPL::observing = false;
-    IOHIDEventSystemClientRef TemperatureInfo::IMPL::hidClient = nullptr;
+    std::recursive_mutex                 * TemperatureInfo::IMPL::rmtx          = nullptr;
+    TemperatureInfo                      * TemperatureInfo::IMPL::info          = nullptr;
+    bool                                   TemperatureInfo::IMPL::observing     = false;
+    IOHIDEventSystemClientRef              TemperatureInfo::IMPL::hidClient     = nullptr;
+    io_connect_t                           TemperatureInfo::IMPL::smcConnection = 0;
+    std::vector< uint32_t >              * TemperatureInfo::IMPL::smcKeys       = nullptr;
+    std::map< uint32_t, SMCKeyInfoData > * TemperatureInfo::IMPL::smcCache      = nullptr;
 }

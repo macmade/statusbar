@@ -30,6 +30,7 @@
 #include "SB/String.hpp"
 #include "SB/Window.hpp"
 #include <locale.h>
+#include <thread>
 
 void displayCPU(         SB::Window & window, const SB::CPULoad & cpu );
 void displayMemory(      SB::Window & window, const SB::MemoryInfo & memory );

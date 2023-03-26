@@ -79,5 +79,27 @@ namespace SB
 
             return String::format( "%.02fTB", static_cast< double >( bytes ) / static_cast< double >( 1024ULL * 1024ULL * 1024ULL * 1024ULL ) );
         }
+
+        bool hasSuffix( const std::string & str, const std::string & suffix )
+        {
+            std::string::size_type pos = str.find( suffix );
+
+            if( str.length() >= suffix.length() && pos == str.length() - suffix.length() )
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        std::string fourCC( uint32_t c )
+        {
+            uint8_t c1 = static_cast< uint8_t >( ( c >> 24 ) & 0xFF );
+            uint8_t c2 = static_cast< uint8_t >( ( c >> 16 ) & 0xFF );
+            uint8_t c3 = static_cast< uint8_t >( ( c >>  8 ) & 0xFF );
+            uint8_t c4 = static_cast< uint8_t >( ( c >>  0 ) & 0xFF );
+
+            return String::format( "%c%c%c%c", c1, c2, c3, c4 );
+        }
     }
 }
