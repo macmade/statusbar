@@ -170,7 +170,7 @@ namespace SB
         }
     }
     
-    void Screen::start()
+    void Screen::start( unsigned int refreshInterval )
     {
         {
             std::lock_guard< std::recursive_mutex > l( this->impl->_rmtx );
@@ -242,6 +242,7 @@ namespace SB
             }
             
             this->refresh();
+            std::this_thread::sleep_for( std::chrono::milliseconds( refreshInterval ) );
         }
         
         this->clear();

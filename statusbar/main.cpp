@@ -165,7 +165,7 @@ int main( int argc, const char * argv[] )
             }
         );
 
-        screen.start();
+        screen.start( 500 );
     }
 
     return 0;

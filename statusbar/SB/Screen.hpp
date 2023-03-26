@@ -57,7 +57,7 @@ namespace SB
             void print( const Color & foreground, const std::string & s );
             void print( const Color & foreground, const Color & background, const std::string & s );
 
-            void start();
+            void start( unsigned int refreshInterval );
             void stop();
             
             void onResize( const std::function<   void() > & f );
