@@ -44,10 +44,10 @@ int main( int argc, const char * argv[] )
 {
     SB::Options options = { argc, argv };
 
-    SB::CPULoad::startObserving();
-    SB::BatteryInfo::startObserving();
-    SB::MemoryInfo::startObserving();
-    SB::TemperatureInfo::startObserving();
+    if( options.cpu()         ) { SB::CPULoad::startObserving(); }
+    if( options.memory()      ) { SB::MemoryInfo::startObserving(); }
+    if( options.battery()     ) { SB::BatteryInfo::startObserving(); }
+    if( options.temperature() ) { SB::TemperatureInfo::startObserving(); }
 
     setlocale( LC_ALL, "" );
 
@@ -82,32 +82,83 @@ int main( int argc, const char * argv[] )
                 SB::BatteryInfo     battery     = SB::BatteryInfo::current();
                 SB::TemperatureInfo temperature = SB::TemperatureInfo::current();
 
-                SB::Window left( 0, 0, screen.width() - 30, screen.height() );
-                SB::Window right( screen.width() - 30, 0, 30, screen.height() );
+                SB::Window left( 0, 0, screen.width() - 32, screen.height() );
+                SB::Window right( screen.width() - 32, 0, 32, screen.height() );
 
-                displayCPU( left, cpu );
+                bool hasLeftData  = false;
+                bool hasRightData = false;
 
-                if( memory.total() > 0 )
+                if( options.cpu() )
                 {
-                    left.print( "    " );
-                    displayMemory( left, memory );
+                    if( hasLeftData )
+                    {
+                        left.print( "    " );
+                    }
+
+                    displayCPU( left, cpu );
+
+                    hasLeftData = true;
                 }
 
-                if( temperature.temperature() > 0 )
+                if( options.memory() && memory.total() > 0 )
                 {
-                    left.print( "    " );
+                    if( hasLeftData )
+                    {
+                        left.print( "    " );
+                    }
+
+                    displayMemory( left, memory );
+
+                    hasLeftData = true;
+                }
+
+                if( options.temperature() && temperature.temperature() > 0 )
+                {
+                    if( hasLeftData )
+                    {
+                        left.print( "    " );
+                    }
+
                     displayTemperature( left, temperature );
+
+                    hasLeftData = true;
                 }
                 
-                if( battery.isAvailable() )
+                if( options.battery() && battery.isAvailable() )
                 {
-                    left.print( "    " );
+                    if( hasLeftData )
+                    {
+                        left.print( "    " );
+                    }
+
                     displayBattery( left, battery );
+
+                    hasLeftData = true;
                 }
 
-                displayDate( right, time( nullptr ) );
-                right.print( " " );
-                displayHour( right, time( nullptr ) );
+                if( options.date() )
+                {
+                    if( hasRightData )
+                    {
+                        right.print( "    " );
+                    }
+
+                    displayDate( right, time( nullptr ) );
+
+                    hasRightData = true;
+                }
+
+                if( options.hour() )
+                {
+                    if( hasRightData )
+                    {
+                        right.print( "    " );
+                    }
+
+                    displayHour( right, time( nullptr ) );
+
+                    hasRightData = true;
+                }
 
                 left.refresh();
                 right.refresh();

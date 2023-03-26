@@ -42,7 +42,13 @@ namespace SB
 
             Options & operator =( Options o );
 
-            bool debug() const;
+            bool debug()       const;
+            bool cpu()         const;
+            bool memory()      const;
+            bool temperature() const;
+            bool battery()     const;
+            bool date()        const;
+            bool hour()        const;
 
             friend void swap( Options & o1, Options & o2 );
 
