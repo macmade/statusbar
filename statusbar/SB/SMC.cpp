@@ -147,7 +147,7 @@ namespace SB
             SMCParamStruct input;
             SMCParamStruct output;
 
-            bzero( &input, sizeof( SMCParamStruct ) );
+            bzero( &input,  sizeof( SMCParamStruct ) );
             bzero( &output, sizeof( SMCParamStruct ) );
 
             input.key              = key;

@@ -46,10 +46,10 @@ namespace SB
 
             typedef struct
             {
-                uint64_t user;
-                uint64_t system;
-                uint64_t idle;
-                uint64_t nice;
+                int64_t user;
+                int64_t system;
+                int64_t idle;
+                int64_t nice;
             }
             CPULoadInfo;
 
@@ -176,14 +176,14 @@ namespace SB
 
             std::vector< CPULoadInfo > info2 = IMPL::getCPULoadInfo();
 
-            uint64_t user1   = Vector::reduce< uint64_t, CPULoadInfo >( info1, 0, []( uint64_t r, CPULoadInfo v ) -> uint64_t { return r + v.user; } );
-            uint64_t user2   = Vector::reduce< uint64_t, CPULoadInfo >( info2, 0, []( uint64_t r, CPULoadInfo v ) -> uint64_t { return r + v.user; } );
-            uint64_t system2 = Vector::reduce< uint64_t, CPULoadInfo >( info2, 0, []( uint64_t r, CPULoadInfo v ) -> uint64_t { return r + v.system; } );
-            uint64_t system1 = Vector::reduce< uint64_t, CPULoadInfo >( info1, 0, []( uint64_t r, CPULoadInfo v ) -> uint64_t { return r + v.system; } );
-            uint64_t idle1   = Vector::reduce< uint64_t, CPULoadInfo >( info1, 0, []( uint64_t r, CPULoadInfo v ) -> uint64_t { return r + v.idle; } );
-            uint64_t idle2   = Vector::reduce< uint64_t, CPULoadInfo >( info2, 0, []( uint64_t r, CPULoadInfo v ) -> uint64_t { return r + v.idle; } );
-            uint64_t nice1   = Vector::reduce< uint64_t, CPULoadInfo >( info1, 0, []( uint64_t r, CPULoadInfo v ) -> uint64_t { return r + v.nice; } );
-            uint64_t nice2   = Vector::reduce< uint64_t, CPULoadInfo >( info2, 0, []( uint64_t r, CPULoadInfo v ) -> uint64_t { return r + v.nice; } );
+            int64_t user1   = Vector::reduce< int64_t, CPULoadInfo >( info1, 0, []( int64_t r, CPULoadInfo v ) -> int64_t { return r + v.user; } );
+            int64_t user2   = Vector::reduce< int64_t, CPULoadInfo >( info2, 0, []( int64_t r, CPULoadInfo v ) -> int64_t { return r + v.user; } );
+            int64_t system2 = Vector::reduce< int64_t, CPULoadInfo >( info2, 0, []( int64_t r, CPULoadInfo v ) -> int64_t { return r + v.system; } );
+            int64_t system1 = Vector::reduce< int64_t, CPULoadInfo >( info1, 0, []( int64_t r, CPULoadInfo v ) -> int64_t { return r + v.system; } );
+            int64_t idle1   = Vector::reduce< int64_t, CPULoadInfo >( info1, 0, []( int64_t r, CPULoadInfo v ) -> int64_t { return r + v.idle; } );
+            int64_t idle2   = Vector::reduce< int64_t, CPULoadInfo >( info2, 0, []( int64_t r, CPULoadInfo v ) -> int64_t { return r + v.idle; } );
+            int64_t nice1   = Vector::reduce< int64_t, CPULoadInfo >( info1, 0, []( int64_t r, CPULoadInfo v ) -> int64_t { return r + v.nice; } );
+            int64_t nice2   = Vector::reduce< int64_t, CPULoadInfo >( info2, 0, []( int64_t r, CPULoadInfo v ) -> int64_t { return r + v.nice; } );
 
             double user   = static_cast< double >( user2 - user1 );
             double system = static_cast< double >( system2 - system1 );
@@ -211,7 +211,7 @@ namespace SB
     {
         std::vector< CPULoad::IMPL::CPULoadInfo > info             = {};
         natural_t                                 cpuCount         = 0;
-        processor_cpu_load_info_t                 cpuLoadInfo      = nullptr;
+        processor_info_array_t                    cpuLoadInfo      = nullptr;
         mach_msg_type_number_t                    cpuLoadInfoCount = 0;
 
         if
@@ -221,25 +221,29 @@ namespace SB
                 mach_host_self(),
                 PROCESSOR_CPU_LOAD_INFO,
                 &cpuCount,
-                reinterpret_cast< processor_info_array_t * >( &cpuLoadInfo ),
+                &cpuLoadInfo,
                 &cpuLoadInfoCount
             )
-            == KERN_SUCCESS && cpuLoadInfo != nullptr
+            != KERN_SUCCESS || cpuLoadInfo == nullptr
         )
         {
-            for( natural_t i = 0; i < cpuCount; i++ )
-            {
-                info.push_back
-                (
-                    {
-                        cpuLoadInfo[ i ].cpu_ticks[ CPU_STATE_USER ],
-                        cpuLoadInfo[ i ].cpu_ticks[ CPU_STATE_SYSTEM ],
-                        cpuLoadInfo[ i ].cpu_ticks[ CPU_STATE_IDLE ],
-                        cpuLoadInfo[ i ].cpu_ticks[ CPU_STATE_NICE ]
-                    }
-                );
-            }
+            return info;
         }
+
+        for( natural_t i = 0; i < cpuCount; i++ )
+        {
+            info.push_back
+            (
+                {
+                    cpuLoadInfo[ ( i * CPU_STATE_MAX ) + CPU_STATE_USER ],
+                    cpuLoadInfo[ ( i * CPU_STATE_MAX ) + CPU_STATE_SYSTEM ],
+                    cpuLoadInfo[ ( i * CPU_STATE_MAX ) + CPU_STATE_IDLE ],
+                    cpuLoadInfo[ ( i * CPU_STATE_MAX ) + CPU_STATE_NICE ]
+                }
+            );
+        }
+
+        vm_deallocate( mach_task_self(), reinterpret_cast< vm_address_t >( cpuLoadInfo ), sizeof( processor_info_array_t ) * cpuLoadInfoCount );
 
         return info;
     }
