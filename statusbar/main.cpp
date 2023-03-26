@@ -208,23 +208,23 @@ void displayCPU( SB::Window & window, const SB::CPULoad & cpu )
 
 void displayMemory( SB::Window & window, const SB::MemoryInfo & memory )
 {
-    window.print( SB::Color::blue(), SB::Color::clear(), "\uf1c0 Memory %.0f%% : ", memory.percentUsed() );
+    window.print( SB::Color::magenta(), SB::Color::clear(), "\uf1c0 Memory %.0f%% : ", memory.percentUsed() );
 
     for( int i = 0; i < 10; i++ )
     {
         if( memory.percentUsed() / 10 < i )
         {
-            window.print( SB::Color::blue(), SB::Color::clear(), "\uf096 " );
+            window.print( SB::Color::magenta(), SB::Color::clear(), "\uf096 " );
         }
         else
         {
-            window.print( SB::Color::blue(), SB::Color::clear(), "\uf0c8 " );
+            window.print( SB::Color::magenta(), SB::Color::clear(), "\uf0c8 " );
         }
     }
 
     window.print
     (
-        SB::Color::blue(),
+        SB::Color::magenta(),
         SB::Color::clear(),
         " %s / %s",
         SB::String::bytesToHumanReadable( memory.used() ).c_str(),
@@ -247,7 +247,7 @@ void displayBattery( SB::Window & window, const SB::BatteryInfo & battery )
 
     if( battery.isCharging() )
     {
-        window.print( SB::Color::yellow(), SB::Color::clear(), " \uf0e7 " );
+        window.print( SB::Color::yellow(), SB::Color::clear(), " \uf0e7" );
     }
 }
 
@@ -258,7 +258,7 @@ void displayTemperature( SB::Window & window, const SB::TemperatureInfo & temper
 
 void displayNetwork( SB::Window & window, const SB::NetworkInfo & network )
 {
-    window.print( SB::Color::green(), SB::Color::clear(), " \uead0 Network: %s (%s)", network.address().c_str(), network.name().c_str() );
+    window.print( SB::Color::blue(), SB::Color::clear(), " \uead0 Network: %s (%s)", network.address().c_str(), network.name().c_str() );
 }
 
 void displayDate( SB::Window & window, time_t time )
