@@ -39,6 +39,7 @@ namespace SB
             bool _memory;
             bool _temperature;
             bool _battery;
+            bool _network;
             bool _date;
             bool _hour;
     };
@@ -90,6 +91,11 @@ namespace SB
         return this->impl->_battery;
     }
 
+    bool Options::network() const
+    {
+        return this->impl->_network;
+    }
+
     bool Options::date() const
     {
         return this->impl->_date;
@@ -113,6 +119,7 @@ namespace SB
         _memory(      false ),
         _temperature( false ),
         _battery(     false ),
+        _network(     false ),
         _date(        false ),
         _hour(        false )
     {
@@ -125,6 +132,7 @@ namespace SB
             if( option == "--memory"      ) { this->_memory      = true; }
             if( option == "--temperature" ) { this->_temperature = true; }
             if( option == "--battery"     ) { this->_battery     = true; }
+            if( option == "--network"     ) { this->_network     = true; }
             if( option == "--date"        ) { this->_date        = true; }
             if( option == "--hour"        ) { this->_hour        = true; }
         }
@@ -135,6 +143,7 @@ namespace SB
             && this->_memory      == false
             && this->_temperature == false
             && this->_battery     == false
+            && this->_network     == false
             && this->_date        == false
             && this->_hour        == false
         )
@@ -143,13 +152,21 @@ namespace SB
             this->_memory      = true;
             this->_temperature = true;
             this->_battery     = true;
+            this->_network     = true;
             this->_date        = true;
             this->_hour        = true;
         }
     }
 
     Options::IMPL::IMPL( const IMPL & o ):
-        _debug( o._debug )
+        _debug(       o._debug ),
+        _cpu(         o._cpu ),
+        _memory(      o._memory ),
+        _temperature( o._temperature ),
+        _battery(     o._battery ),
+        _network(     o._network ),
+        _date(        o._date ),
+        _hour(        o._hour )
     {}
 
     Options::IMPL::~IMPL()

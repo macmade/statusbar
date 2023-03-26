@@ -22,8 +22,8 @@
  * THE SOFTWARE.
  ******************************************************************************/
 
-#ifndef SB_OPTIONS_HPP
-#define SB_OPTIONS_HPP
+#ifndef SB_NETWORK_INFO_HPP
+#define SB_NETWORK_INFO_HPP
 
 #include <memory>
 #include <algorithm>
@@ -31,33 +31,31 @@
 
 namespace SB
 {
-    class Options
+    class NetworkInfo
     {
         public:
 
-            Options( int argc, const char ** argv );
-            Options( const Options & o );
-            Options( Options && o ) noexcept;
-            ~Options();
+            static void        startObserving();
+            static NetworkInfo current();
 
-            Options & operator =( Options o );
+            NetworkInfo( const NetworkInfo & o );
+            NetworkInfo( NetworkInfo && o ) noexcept;
+            ~NetworkInfo();
 
-            bool debug()       const;
-            bool cpu()         const;
-            bool memory()      const;
-            bool temperature() const;
-            bool battery()     const;
-            bool network()     const;
-            bool date()        const;
-            bool hour()        const;
+            NetworkInfo & operator =( NetworkInfo o );
 
-            friend void swap( Options & o1, Options & o2 );
+            std::string name()    const;
+            std::string address() const;
+
+            friend void swap( NetworkInfo & o1, NetworkInfo & o2 );
 
         private:
+
+            NetworkInfo( const std::string & name, const std::string & address );
 
             class IMPL;
             std::unique_ptr< IMPL > impl;
     };
 }
 
-#endif /* SB_OPTIONS_HPP */
+#endif /* SB_NETWORK_INFO_HPP */

@@ -12,6 +12,7 @@
 		0566DDC129CE718A0031F6CC /* IOHID.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0566DDBF29CE718A0031F6CC /* IOHID.cpp */; };
 		0566DDD729CE7A850031F6CC /* SMC.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0566DDD529CE7A850031F6CC /* SMC.cpp */; };
 		0566DDDC29D09C040031F6CC /* Options.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0566DDDA29D09C040031F6CC /* Options.cpp */; };
+		0566DDF229D0A9D50031F6CC /* NetworkInfo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0566DDF029D0A9D50031F6CC /* NetworkInfo.cpp */; };
 		0581834422E9ACFF008D1BFF /* Screen.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0581834222E9ACFF008D1BFF /* Screen.cpp */; };
 		0581834A22E9AE24008D1BFF /* libncurses.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 0581834922E9AE24008D1BFF /* libncurses.tbd */; };
 		05B2813322E77AC700110404 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 05B2813222E77AC700110404 /* main.cpp */; };
@@ -50,6 +51,8 @@
 		0566DDD629CE7A850031F6CC /* SMC.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = SMC.hpp; sourceTree = "<group>"; };
 		0566DDDA29D09C040031F6CC /* Options.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Options.cpp; sourceTree = "<group>"; };
 		0566DDDB29D09C040031F6CC /* Options.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Options.hpp; sourceTree = "<group>"; };
+		0566DDF029D0A9D50031F6CC /* NetworkInfo.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = NetworkInfo.cpp; sourceTree = "<group>"; };
+		0566DDF129D0A9D50031F6CC /* NetworkInfo.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = NetworkInfo.hpp; sourceTree = "<group>"; };
 		0581831D22E8DC5C008D1BFF /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		0581834222E9ACFF008D1BFF /* Screen.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Screen.cpp; sourceTree = "<group>"; };
 		0581834322E9ACFF008D1BFF /* Screen.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Screen.hpp; sourceTree = "<group>"; };
@@ -297,6 +300,8 @@
 				0566DDC029CE718A0031F6CC /* IOHID.hpp */,
 				05D6711729CDF5CE000B2F56 /* MemoryInfo.cpp */,
 				05D6711829CDF5CE000B2F56 /* MemoryInfo.hpp */,
+				0566DDF029D0A9D50031F6CC /* NetworkInfo.cpp */,
+				0566DDF129D0A9D50031F6CC /* NetworkInfo.hpp */,
 				0566DDDA29D09C040031F6CC /* Options.cpp */,
 				0566DDDB29D09C040031F6CC /* Options.hpp */,
 				0581834222E9ACFF008D1BFF /* Screen.cpp */,
@@ -384,6 +389,7 @@
 				05D6711929CDF5CE000B2F56 /* MemoryInfo.cpp in Sources */,
 				05D670DF29CCDC36000B2F56 /* CPULoad.cpp in Sources */,
 				05D6711629CDE46F000B2F56 /* BatteryInfo.cpp in Sources */,
+				0566DDF229D0A9D50031F6CC /* NetworkInfo.cpp in Sources */,
 				0566DDC129CE718A0031F6CC /* IOHID.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

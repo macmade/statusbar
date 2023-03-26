@@ -25,6 +25,7 @@
 #include "SB/Screen.hpp"
 #include "SB/CPULoad.hpp"
 #include "SB/BatteryInfo.hpp"
+#include "SB/NetworkInfo.hpp"
 #include "SB/Options.hpp"
 #include "SB/MemoryInfo.hpp"
 #include "SB/TemperatureInfo.hpp"
@@ -37,6 +38,7 @@ void displayCPU(         SB::Window & window, const SB::CPULoad & cpu );
 void displayMemory(      SB::Window & window, const SB::MemoryInfo & memory );
 void displayBattery(     SB::Window & window, const SB::BatteryInfo & battery );
 void displayTemperature( SB::Window & window, const SB::TemperatureInfo & temperature );
+void displayNetwork(     SB::Window & window, const SB::NetworkInfo & network );
 void displayDate(        SB::Window & window, time_t time );
 void displayHour(        SB::Window & window, time_t time );
 
@@ -47,6 +49,7 @@ int main( int argc, const char * argv[] )
     if( options.cpu()         ) { SB::CPULoad::startObserving(); }
     if( options.memory()      ) { SB::MemoryInfo::startObserving(); }
     if( options.battery()     ) { SB::BatteryInfo::startObserving(); }
+    if( options.network()     ) { SB::NetworkInfo::startObserving(); }
     if( options.temperature() ) { SB::TemperatureInfo::startObserving(); }
 
     setlocale( LC_ALL, "" );
@@ -80,6 +83,7 @@ int main( int argc, const char * argv[] )
                 SB::CPULoad         cpu         = SB::CPULoad::current();
                 SB::MemoryInfo      memory      = SB::MemoryInfo::current();
                 SB::BatteryInfo     battery     = SB::BatteryInfo::current();
+                SB::NetworkInfo     network     = SB::NetworkInfo::current();
                 SB::TemperatureInfo temperature = SB::TemperatureInfo::current();
 
                 SB::Window left( 0, 0, screen.width() - 32, screen.height() );
@@ -123,7 +127,7 @@ int main( int argc, const char * argv[] )
 
                     hasLeftData = true;
                 }
-                
+
                 if( options.battery() && battery.isAvailable() )
                 {
                     if( hasLeftData )
@@ -132,6 +136,18 @@ int main( int argc, const char * argv[] )
                     }
 
                     displayBattery( left, battery );
+
+                    hasLeftData = true;
+                }
+
+                if( options.network() && network.name().empty() == false )
+                {
+                    if( hasLeftData )
+                    {
+                        left.print( "    " );
+                    }
+
+                    displayNetwork( left, network );
 
                     hasLeftData = true;
                 }
@@ -238,6 +254,11 @@ void displayBattery( SB::Window & window, const SB::BatteryInfo & battery )
 void displayTemperature( SB::Window & window, const SB::TemperatureInfo & temperature )
 {
     window.print( SB::Color::red(), SB::Color::clear(), " \uf2c7 Temperature: %.0f°", temperature.temperature() );
+}
+
+void displayNetwork( SB::Window & window, const SB::NetworkInfo & network )
+{
+    window.print( SB::Color::green(), SB::Color::clear(), " \uead0 Network: %s (%s)", network.address().c_str(), network.name().c_str() );
 }
 
 void displayDate( SB::Window & window, time_t time )
