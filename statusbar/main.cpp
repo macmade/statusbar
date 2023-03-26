@@ -79,17 +79,17 @@ int main( int argc, const char * argv[] )
                     left.print( "    " );
                     displayMemory( left, memory );
                 }
-                
-                if( battery.isAvailable() )
-                {
-                    left.print( "    " );
-                    displayBattery( left, battery );
-                }
 
                 if( temperature.temperature() > 0 )
                 {
                     left.print( "    " );
                     displayTemperature( left, temperature );
+                }
+                
+                if( battery.isAvailable() )
+                {
+                    left.print( "    " );
+                    displayBattery( left, battery );
                 }
 
                 displayDate( right, time( nullptr ) );
