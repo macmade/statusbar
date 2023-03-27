@@ -22,16 +22,16 @@
  * THE SOFTWARE.
  ******************************************************************************/
 
-#include "SB/Screen.hpp"
-#include "SB/CPULoad.hpp"
-#include "SB/GPULoad.hpp"
-#include "SB/BatteryInfo.hpp"
-#include "SB/NetworkInfo.hpp"
+#include "SB/UI/Screen.hpp"
+#include "SB/Instruments/CPULoad.hpp"
+#include "SB/Instruments/GPULoad.hpp"
+#include "SB/Instruments/BatteryInfo.hpp"
+#include "SB/Instruments/NetworkInfo.hpp"
 #include "SB/Options.hpp"
-#include "SB/MemoryInfo.hpp"
-#include "SB/TemperatureInfo.hpp"
-#include "SB/String.hpp"
-#include "SB/Window.hpp"
+#include "SB/Instruments/MemoryInfo.hpp"
+#include "SB/Instruments/TemperatureInfo.hpp"
+#include "SB/Helpers/String.hpp"
+#include "SB/UI/Window.hpp"
 #include <locale.h>
 #include <thread>
 #include <iostream>

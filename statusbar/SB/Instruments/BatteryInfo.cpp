@@ -22,7 +22,7 @@
  * THE SOFTWARE.
  ******************************************************************************/
 
-#include "SB/BatteryInfo.hpp"
+#include "SB/Instruments/BatteryInfo.hpp"
 #include "SB/UpdateQueue.hpp"
 #include <mutex>
 #include <thread>

@@ -22,8 +22,8 @@
  * THE SOFTWARE.
  ******************************************************************************/
 
-#include "SB/Screen.hpp"
-#include "SB/ColorPair.hpp"
+#include "SB/UI/Screen.hpp"
+#include "SB/UI/ColorPair.hpp"
 #include <algorithm>
 #include <ncurses.h>
 #include <sys/ioctl.h>

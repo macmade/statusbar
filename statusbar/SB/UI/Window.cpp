@@ -22,10 +22,10 @@
  * THE SOFTWARE.
  ******************************************************************************/
 
-#include "SB/Window.hpp"
-#include "SB/Casts.hpp"
-#include "SB/Screen.hpp"
-#include "SB/ColorPair.hpp"
+#include "SB/UI/Window.hpp"
+#include "SB/Helpers/Casts.hpp"
+#include "SB/UI/Screen.hpp"
+#include "SB/UI/ColorPair.hpp"
 #include <ncurses.h>
 
 namespace SB

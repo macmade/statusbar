@@ -22,7 +22,7 @@
  * THE SOFTWARE.
  ******************************************************************************/
 
-#include "SB/MemoryInfo.hpp"
+#include "SB/Instruments/MemoryInfo.hpp"
 #include "SB/UpdateQueue.hpp"
 #include <mutex>
 #include <thread>

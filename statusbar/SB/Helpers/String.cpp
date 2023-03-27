@@ -22,7 +22,7 @@
  * THE SOFTWARE.
  ******************************************************************************/
 
-#include "SB/String.hpp"
+#include "SB/Helpers/String.hpp"
 #include <cstring>
 #include <cstdarg>
 

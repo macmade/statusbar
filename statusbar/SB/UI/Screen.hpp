@@ -22,37 +22,56 @@
  * THE SOFTWARE.
  ******************************************************************************/
 
-#ifndef SB_COLOR_PAIR_HPP
-#define SB_COLOR_PAIR_HPP
+#ifndef SB_SCREEN_HPP
+#define SB_SCREEN_HPP
 
-#include "SB/Color.hpp"
+#include <cstdlib>
+#include <functional>
 #include <memory>
-#include <algorithm>
+#include <string>
+#include <chrono>
+#include "SB/UI/Color.hpp"
 
 namespace SB
 {
-    class ColorPair
+    class Screen
     {
         public:
+            
+            static Screen & shared();
+            
+            Screen( const Screen & o )      = delete;
+            Screen( Screen && o ) noexcept  = delete;
+            Screen & operator =( Screen o ) = delete;
+            
+            std::size_t width()  const;
+            std::size_t height() const;
+            
+            bool supportsColors() const;
+            void disableColors()  const;
+            bool isRunning()      const;
+            void clear()          const;
+            void refresh()        const;
 
-            static short pairForColors( const Color & foreground, const Color & background );
+            void print( const std::string & s );
+            void print( const Color & foreground, const std::string & s );
+            void print( const Color & foreground, const Color & background, const std::string & s );
 
+            void start( unsigned int refreshInterval );
+            void stop();
+            
+            void onResize( const std::function<   void() > & f );
+            void onKeyPress( const std::function< void( int key ) > & f );
+            void onUpdate( const std::function<   void() > & f );
+            
         private:
-
-            static ColorPair & shared();
-
-            ColorPair();
-            ColorPair( const ColorPair & o );
-            ColorPair( ColorPair && o ) noexcept;
-            ~ColorPair();
-
-            ColorPair & operator =( ColorPair o );
-
-            friend void swap( ColorPair & o1, ColorPair & o2 );
-
+            
+            Screen();
+            
             class IMPL;
+            
             std::unique_ptr< IMPL > impl;
     };
 }
 
-#endif /* SB_COLOR_PAIR_HPP */
+#endif /* SB_SCREEN_HPP */

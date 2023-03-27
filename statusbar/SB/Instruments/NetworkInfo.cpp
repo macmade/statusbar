@@ -22,7 +22,7 @@
  * THE SOFTWARE.
  ******************************************************************************/
 
-#include "SB/NetworkInfo.hpp"
+#include "SB/Instruments/NetworkInfo.hpp"
 #include "SB/UpdateQueue.hpp"
 #include <mutex>
 #include <thread>

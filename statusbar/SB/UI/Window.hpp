@@ -29,7 +29,7 @@
 #include <algorithm>
 #include <cstdlib>
 #include <string>
-#include "SB/Color.hpp"
+#include "SB/UI/Color.hpp"
 
 namespace SB
 {

@@ -22,7 +22,7 @@
  * THE SOFTWARE.
  ******************************************************************************/
 
-#include "SB/SMC.hpp"
+#include "SB/Instruments/Internal/SMC.hpp"
 #include <cmath>
 
 #pragma clang diagnostic push

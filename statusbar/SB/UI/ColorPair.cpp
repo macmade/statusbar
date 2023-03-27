@@ -22,7 +22,7 @@
  * THE SOFTWARE.
  ******************************************************************************/
 
-#include "SB/ColorPair.hpp"
+#include "SB/UI/ColorPair.hpp"
 #include <ncurses.h>
 #include <mutex>
 #include <tuple>

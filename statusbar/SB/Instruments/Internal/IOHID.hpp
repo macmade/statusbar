@@ -22,29 +22,19 @@
  * THE SOFTWARE.
  ******************************************************************************/
 
-#ifndef SB_SMC_HPP
-#define SB_SMC_HPP
+#ifndef SB_IOHID_HPP
+#define SB_IOHID_HPP
 
-#include "SB/SMC-Internal.h"
-#include <cstdint>
+#include "SB/Instruments/Internal/IOHID-Internal.h"
 #include <map>
+#include <string>
 
 namespace SB
 {
-    namespace SMC
+    namespace IOHID
     {
-        bool     callSMCFunction( io_connect_t connection, uint32_t function, const SMCParamStruct & input, SMCParamStruct & output );
-        bool     readSMCKeyInfo( io_connect_t connection, SMCKeyInfoData & info, uint32_t key, std::map< uint32_t, SMCKeyInfoData > & cache );
-        bool     readSMCKey( io_connect_t connection, uint32_t & key, uint32_t index );
-        bool     readSMCKey( io_connect_t connection, uint32_t key, uint8_t * buffer, uint32_t & maxSize, SMCKeyInfoData & keyInfo, std::map< uint32_t, SMCKeyInfoData > & cache );
-        uint32_t readSMCKeyCount( io_connect_t connection, std::map< uint32_t, SMCKeyInfoData > & cache );
-        uint32_t readInteger( uint8_t * data, uint32_t size );
-        uint32_t readUInt32( uint8_t * data, uint32_t size );
-        uint64_t readUInt64( uint8_t * data, uint32_t size );
-        double   readFloat32( uint8_t * data, uint32_t size );
-        double   readFloat32( uint8_t * data, uint32_t size );
-        double   readIOFloat( uint8_t * data, uint32_t size );
+        std::map< std::string, double > read( IOHIDEventSystemClientRef client, int64_t page, int64_t usage, int64_t eventType, int64_t eventField );
     }
 }
 
-#endif /* SB_SMC_HPP */
+#endif /* SB_IOHID_HPP */

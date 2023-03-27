@@ -22,8 +22,8 @@
  * THE SOFTWARE.
  ******************************************************************************/
 
-#include "SB/CPULoad.hpp"
-#include "SB/Vector.hpp"
+#include "SB/Instruments/CPULoad.hpp"
+#include "SB/Helpers/Vector.hpp"
 #include <mutex>
 #include <thread>
 #include <unistd.h>

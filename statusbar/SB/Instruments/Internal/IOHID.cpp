@@ -22,7 +22,7 @@
  * THE SOFTWARE.
  ******************************************************************************/
 
-#include "SB/IOHID.hpp"
+#include "SB/Instruments/Internal/IOHID.hpp"
 
 namespace SB
 {

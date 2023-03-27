@@ -22,7 +22,7 @@
  * THE SOFTWARE.
  ******************************************************************************/
 
-#include "SB/GPULoad.hpp"
+#include "SB/Instruments/GPULoad.hpp"
 #include "SB/UpdateQueue.hpp"
 #include <mutex>
 #include <thread>

@@ -22,12 +22,12 @@
  * THE SOFTWARE.
  ******************************************************************************/
 
-#include "SB/TemperatureInfo.hpp"
-#include "SB/Vector.hpp"
-#include "SB/String.hpp"
+#include "SB/Instruments/TemperatureInfo.hpp"
+#include "SB/Helpers/Vector.hpp"
+#include "SB/Helpers/String.hpp"
 #include "SB/UpdateQueue.hpp"
-#include "SB/IOHID.hpp"
-#include "SB/SMC.hpp"
+#include "SB/Instruments/Internal/IOHID.hpp"
+#include "SB/Instruments/Internal/SMC.hpp"
 #include <mutex>
 #include <thread>
 #include <vector>

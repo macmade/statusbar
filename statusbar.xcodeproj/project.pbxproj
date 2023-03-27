@@ -292,42 +292,74 @@
 		05B2818422E78B7400110404 /* SB */ = {
 			isa = PBXGroup;
 			children = (
-				05D6711429CDE46F000B2F56 /* BatteryInfo.cpp */,
-				05D6711529CDE46F000B2F56 /* BatteryInfo.hpp */,
-				05D670F729CDDA5A000B2F56 /* Casts.hpp */,
+				05C41D5529D2151F0056EA53 /* Helpers */,
+				05C41D5629D2158E0056EA53 /* Instruments */,
+				0566DDDA29D09C040031F6CC /* Options.cpp */,
+				0566DDDB29D09C040031F6CC /* Options.hpp */,
+				05C41D5429D214D60056EA53 /* UI */,
+				0566DDF329D0B0900031F6CC /* UpdateQueue.cpp */,
+				0566DDF429D0B0900031F6CC /* UpdateQueue.hpp */,
+			);
+			path = SB;
+			sourceTree = "<group>";
+		};
+		05C41D5429D214D60056EA53 /* UI */ = {
+			isa = PBXGroup;
+			children = (
 				053B4B1622F5F60D002C6AB9 /* Color.cpp */,
 				053B4B1722F5F60D002C6AB9 /* Color.hpp */,
 				05C965E429CC6BF60091F341 /* ColorPair.cpp */,
 				05C965E529CC6BF60091F341 /* ColorPair.hpp */,
+				0581834222E9ACFF008D1BFF /* Screen.cpp */,
+				0581834322E9ACFF008D1BFF /* Screen.hpp */,
+				05D670F429CDDA2E000B2F56 /* Window.cpp */,
+				05D670F529CDDA2E000B2F56 /* Window.hpp */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
+		05C41D5529D2151F0056EA53 /* Helpers */ = {
+			isa = PBXGroup;
+			children = (
+				05D670F729CDDA5A000B2F56 /* Casts.hpp */,
+				05D670E029CCEF54000B2F56 /* String.cpp */,
+				05D670E129CCEF54000B2F56 /* String.hpp */,
+				05D670E429CCF3CA000B2F56 /* Vector.hpp */,
+			);
+			path = Helpers;
+			sourceTree = "<group>";
+		};
+		05C41D5629D2158E0056EA53 /* Instruments */ = {
+			isa = PBXGroup;
+			children = (
+				05C41D5729D215F10056EA53 /* Internal */,
+				05D6711429CDE46F000B2F56 /* BatteryInfo.cpp */,
+				05D6711529CDE46F000B2F56 /* BatteryInfo.hpp */,
 				05D670DD29CCDC36000B2F56 /* CPULoad.cpp */,
 				05D670DE29CCDC36000B2F56 /* CPULoad.hpp */,
 				05C41D5129D202040056EA53 /* GPULoad.cpp */,
 				05C41D5229D202040056EA53 /* GPULoad.hpp */,
-				0566DDBD29CE18070031F6CC /* IOHID-Internal.h */,
-				0566DDBF29CE718A0031F6CC /* IOHID.cpp */,
-				0566DDC029CE718A0031F6CC /* IOHID.hpp */,
 				05D6711729CDF5CE000B2F56 /* MemoryInfo.cpp */,
 				05D6711829CDF5CE000B2F56 /* MemoryInfo.hpp */,
 				0566DDF029D0A9D50031F6CC /* NetworkInfo.cpp */,
 				0566DDF129D0A9D50031F6CC /* NetworkInfo.hpp */,
-				0566DDDA29D09C040031F6CC /* Options.cpp */,
-				0566DDDB29D09C040031F6CC /* Options.hpp */,
-				0581834222E9ACFF008D1BFF /* Screen.cpp */,
-				0581834322E9ACFF008D1BFF /* Screen.hpp */,
+				0566DDBA29CE13380031F6CC /* TemperatureInfo.cpp */,
+				0566DDBB29CE13380031F6CC /* TemperatureInfo.hpp */,
+			);
+			path = Instruments;
+			sourceTree = "<group>";
+		};
+		05C41D5729D215F10056EA53 /* Internal */ = {
+			isa = PBXGroup;
+			children = (
+				0566DDBD29CE18070031F6CC /* IOHID-Internal.h */,
+				0566DDBF29CE718A0031F6CC /* IOHID.cpp */,
+				0566DDC029CE718A0031F6CC /* IOHID.hpp */,
 				0566DDBE29CE6E060031F6CC /* SMC-Internal.h */,
 				0566DDD529CE7A850031F6CC /* SMC.cpp */,
 				0566DDD629CE7A850031F6CC /* SMC.hpp */,
-				05D670E029CCEF54000B2F56 /* String.cpp */,
-				05D670E129CCEF54000B2F56 /* String.hpp */,
-				0566DDBA29CE13380031F6CC /* TemperatureInfo.cpp */,
-				0566DDBB29CE13380031F6CC /* TemperatureInfo.hpp */,
-				0566DDF329D0B0900031F6CC /* UpdateQueue.cpp */,
-				0566DDF429D0B0900031F6CC /* UpdateQueue.hpp */,
-				05D670E429CCF3CA000B2F56 /* Vector.hpp */,
-				05D670F429CDDA2E000B2F56 /* Window.cpp */,
-				05D670F529CDDA2E000B2F56 /* Window.hpp */,
 			);
-			path = SB;
+			path = Internal;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */

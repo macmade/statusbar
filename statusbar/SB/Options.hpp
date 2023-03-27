@@ -28,7 +28,7 @@
 #include <memory>
 #include <algorithm>
 #include <string>
-#include "SB/Color.hpp"
+#include "SB/UI/Color.hpp"
 
 namespace SB
 {
