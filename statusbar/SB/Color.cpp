@@ -39,6 +39,20 @@ namespace SB
             short _value;
     };
 
+    Color Color::color( const std::string & name )
+    {
+        if( name == "black"   ) { return Color::black(); }
+        if( name == "red"     ) { return Color::red(); }
+        if( name == "green"   ) { return Color::green(); }
+        if( name == "yellow"  ) { return Color::yellow(); }
+        if( name == "blue"    ) { return Color::blue(); }
+        if( name == "magenta" ) { return Color::magenta(); }
+        if( name == "cyan"    ) { return Color::cyan(); }
+        if( name == "white"   ) { return Color::white(); }
+
+        return Color::clear();
+    }
+
     Color Color::clear()
     {
         return Color( -1 );

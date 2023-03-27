@@ -28,6 +28,7 @@
 #include <memory>
 #include <algorithm>
 #include <string>
+#include "SB/Color.hpp"
 
 namespace SB
 {
@@ -43,13 +44,22 @@ namespace SB
             Options & operator =( Options o );
 
             bool debug()       const;
+            bool help()        const;
             bool cpu()         const;
             bool memory()      const;
             bool temperature() const;
             bool battery()     const;
             bool network()     const;
             bool date()        const;
-            bool hour()        const;
+            bool time()        const;
+
+            Color cpuColor()         const;
+            Color memoryColor()      const;
+            Color temperatureColor() const;
+            Color batteryColor()     const;
+            Color networkColor()     const;
+            Color dateColor()        const;
+            Color timeColor()        const;
 
             friend void swap( Options & o1, Options & o2 );
 

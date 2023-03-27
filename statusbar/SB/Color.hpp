@@ -33,7 +33,9 @@ namespace SB
     class Color
     {
         public:
-            
+
+            static Color color( const std::string & name );
+
             static Color clear();
             static Color black();
             static Color red();

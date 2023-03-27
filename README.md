@@ -10,7 +10,31 @@ statusbar
 
 ### About
 
-...
+Statusbar for your terminal.
+
+```
+Usage: statusbar [OPTIONS]
+
+Options:
+
+    --help                 Shows the help dialog
+    --cpu                  Displays CPU load
+    --memory               Displays memory usage
+    --temperature          Displays temperature
+    --battery              Displays battery charge
+    --network              Displays network address
+    --date                 Displays current date
+    --time                 Displays current time
+    --cpu-color            Color for CPU load
+    --memory-color         Color for memory usage
+    --temperature-color    Color for temperature
+    --battery-color        Color for battery charge
+    --network-color        Color for network address
+    --date-color           Color for current date
+    --time-color           Color for current time
+
+Available Colors: red, yellow, green, cyan, blue, magenta, black, white, clear
+```
 
 License
 -------

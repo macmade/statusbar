@@ -33,18 +33,28 @@
 #include "SB/Window.hpp"
 #include <locale.h>
 #include <thread>
+#include <iostream>
 
-void displayCPU(         SB::Window & window, const SB::CPULoad & cpu );
-void displayMemory(      SB::Window & window, const SB::MemoryInfo & memory );
-void displayBattery(     SB::Window & window, const SB::BatteryInfo & battery );
-void displayTemperature( SB::Window & window, const SB::TemperatureInfo & temperature );
-void displayNetwork(     SB::Window & window, const SB::NetworkInfo & network );
-void displayDate(        SB::Window & window, time_t time );
-void displayHour(        SB::Window & window, time_t time );
+void displayCPU(         const SB::Color & color, SB::Window & window, const SB::CPULoad & cpu );
+void displayMemory(      const SB::Color & color, SB::Window & window, const SB::MemoryInfo & memory );
+void displayBattery(     const SB::Color & color, SB::Window & window, const SB::BatteryInfo & battery );
+void displayTemperature( const SB::Color & color, SB::Window & window, const SB::TemperatureInfo & temperature );
+void displayNetwork(     const SB::Color & color, SB::Window & window, const SB::NetworkInfo & network );
+void displayDate(        const SB::Color & color, SB::Window & window, time_t time );
+void displayTime(        const SB::Color & color, SB::Window & window, time_t time );
+
+void showHelp();
 
 int main( int argc, const char * argv[] )
 {
     SB::Options options = { argc, argv };
+
+    if( options.help() )
+    {
+        showHelp();
+
+        return 0;
+    }
 
     if( options.cpu()         ) { SB::CPULoad::startObserving(); }
     if( options.memory()      ) { SB::MemoryInfo::startObserving(); }
@@ -99,7 +109,7 @@ int main( int argc, const char * argv[] )
                         left.print( "    " );
                     }
 
-                    displayCPU( left, cpu );
+                    displayCPU( options.cpuColor(), left, cpu );
 
                     hasLeftData = true;
                 }
@@ -111,7 +121,7 @@ int main( int argc, const char * argv[] )
                         left.print( "    " );
                     }
 
-                    displayMemory( left, memory );
+                    displayMemory( options.memoryColor(),left, memory );
 
                     hasLeftData = true;
                 }
@@ -123,7 +133,7 @@ int main( int argc, const char * argv[] )
                         left.print( "    " );
                     }
 
-                    displayTemperature( left, temperature );
+                    displayTemperature( options.temperatureColor(), left, temperature );
 
                     hasLeftData = true;
                 }
@@ -135,7 +145,7 @@ int main( int argc, const char * argv[] )
                         left.print( "    " );
                     }
 
-                    displayBattery( left, battery );
+                    displayBattery( options.batteryColor(), left, battery );
 
                     hasLeftData = true;
                 }
@@ -147,7 +157,7 @@ int main( int argc, const char * argv[] )
                         left.print( "    " );
                     }
 
-                    displayNetwork( left, network );
+                    displayNetwork( options.networkColor(), left, network );
 
                     hasLeftData = true;
                 }
@@ -159,19 +169,19 @@ int main( int argc, const char * argv[] )
                         right.print( "    " );
                     }
 
-                    displayDate( right, time( nullptr ) );
+                    displayDate( options.dateColor(), right, time( nullptr ) );
 
                     hasRightData = true;
                 }
 
-                if( options.hour() )
+                if( options.time() )
                 {
                     if( hasRightData )
                     {
                         right.print( "    " );
                     }
 
-                    displayHour( right, time( nullptr ) );
+                    displayTime( options.timeColor(), right, time( nullptr ) );
 
                     hasRightData = true;
                 }
@@ -187,44 +197,44 @@ int main( int argc, const char * argv[] )
     return 0;
 }
 
-void displayCPU( SB::Window & window, const SB::CPULoad & cpu )
+void displayCPU( const SB::Color & color, SB::Window & window, const SB::CPULoad & cpu )
 {
-    window.print( SB::Color::green(), SB::Color::clear(), "\uf2db CPU: %.0f%% ", cpu.total() );
+    window.print( color, SB::Color::clear(), "\uf2db CPU: %.0f%% ", cpu.total() );
 
     for( int i = 0; i < 10; i++ )
     {
         if( cpu.total() / 10 < i )
         {
-            window.print( SB::Color::green(), SB::Color::clear(), "\uf096 " );
+            window.print( color, SB::Color::clear(), "\uf096 " );
         }
         else
         {
-            window.print( SB::Color::green(), SB::Color::clear(), "\uf0c8 " );
+            window.print( color, SB::Color::clear(), "\uf0c8 " );
         }
     }
 
-    window.print( SB::Color::green(), SB::Color::clear(), " \uf007 %.0f%% \uf013 %.0f%%", cpu.user(), cpu.system() );
+    window.print( color, SB::Color::clear(), " \uf007 %.0f%% \uf013 %.0f%%", cpu.user(), cpu.system() );
 }
 
-void displayMemory( SB::Window & window, const SB::MemoryInfo & memory )
+void displayMemory( const SB::Color & color, SB::Window & window, const SB::MemoryInfo & memory )
 {
-    window.print( SB::Color::blue(), SB::Color::clear(), "\uf1c0 Memory %.0f%% : ", memory.percentUsed() );
+    window.print( color, SB::Color::clear(), "\uf1c0 Memory %.0f%% : ", memory.percentUsed() );
 
     for( int i = 0; i < 10; i++ )
     {
         if( memory.percentUsed() / 10 < i )
         {
-            window.print( SB::Color::blue(), SB::Color::clear(), "\uf096 " );
+            window.print( color, SB::Color::clear(), "\uf096 " );
         }
         else
         {
-            window.print( SB::Color::blue(), SB::Color::clear(), "\uf0c8 " );
+            window.print( color, SB::Color::clear(), "\uf0c8 " );
         }
     }
 
     window.print
     (
-        SB::Color::blue(),
+        color,
         SB::Color::clear(),
         " %s / %s",
         SB::String::bytesToHumanReadable( memory.used() ).c_str(),
@@ -232,7 +242,7 @@ void displayMemory( SB::Window & window, const SB::MemoryInfo & memory )
     );
 }
 
-void displayBattery( SB::Window & window, const SB::BatteryInfo & battery )
+void displayBattery( const SB::Color & color, SB::Window & window, const SB::BatteryInfo & battery )
 {
     int64_t      capacity = battery.capacity();
     const char * icon;
@@ -243,25 +253,25 @@ void displayBattery( SB::Window & window, const SB::BatteryInfo & battery )
     else if( capacity >= 20 ) { icon = "\uf243"; }
     else                      { icon = "\uf244"; }
 
-    window.print( SB::Color::yellow(), SB::Color::clear(), "%s  Battery: %lli%%", icon, capacity );
+    window.print( color, SB::Color::clear(), "%s  Battery: %lli%%", icon, capacity );
 
     if( battery.isCharging() )
     {
-        window.print( SB::Color::yellow(), SB::Color::clear(), " \uf0e7" );
+        window.print( color, SB::Color::clear(), " \uf0e7" );
     }
 }
 
-void displayTemperature( SB::Window & window, const SB::TemperatureInfo & temperature )
+void displayTemperature( const SB::Color & color, SB::Window & window, const SB::TemperatureInfo & temperature )
 {
-    window.print( SB::Color::red(), SB::Color::clear(), " \uf2c7 Temperature: %.0f°", temperature.temperature() );
+    window.print( color, SB::Color::clear(), " \uf2c7 Temperature: %.0f°", temperature.temperature() );
 }
 
-void displayNetwork( SB::Window & window, const SB::NetworkInfo & network )
+void displayNetwork( const SB::Color & color, SB::Window & window, const SB::NetworkInfo & network )
 {
-    window.print( SB::Color::cyan(), SB::Color::clear(), " \uead0 Network: %s (%s)", network.address().c_str(), network.name().c_str() );
+    window.print( color, SB::Color::clear(), " \uead0 Network: %s (%s)", network.address().c_str(), network.name().c_str() );
 }
 
-void displayDate( SB::Window & window, time_t time )
+void displayDate( const SB::Color & color, SB::Window & window, time_t time )
 {
     struct tm * local = localtime( &time );
 
@@ -270,10 +280,10 @@ void displayDate( SB::Window & window, time_t time )
     memset( buf, 0, sizeof( buf ) );
     strftime( buf, sizeof( buf ), "%d %B %Y", local );
 
-    window.print( SB::Color::cyan(), SB::Color::clear(), "\uf073  %s ", buf );
+    window.print( color, SB::Color::clear(), "\uf073  %s ", buf );
 }
 
-void displayHour( SB::Window & window, time_t time )
+void displayTime( const SB::Color & color, SB::Window & window, time_t time )
 {
     struct tm * local = localtime( &time );
 
@@ -282,6 +292,33 @@ void displayHour( SB::Window & window, time_t time )
     memset( buf, 0, sizeof( buf ) );
     strftime( buf, sizeof( buf ), "%H:%M:%S", local );
 
-    window.print( SB::Color::magenta(), SB::Color::clear(), "\uf017  %s ", buf );
+    window.print( color, SB::Color::clear(), "\uf017  %s ", buf );
 }
 
+void showHelp()
+{
+    std::cout << "Usage: statusbar [OPTIONS]"
+              << std::endl
+              << std::endl
+              << "Options:"
+              << std::endl
+              << std::endl
+              << "    --help                 Shows this help dialog"   << std::endl
+              << "    --cpu                  Displays CPU load"        << std::endl
+              << "    --memory               Displays memory usage"     << std::endl
+              << "    --temperature          Displays temperature"      << std::endl
+              << "    --battery              Displays battery charge"   << std::endl
+              << "    --network              Displays network address"  << std::endl
+              << "    --date                 Displays current date"     << std::endl
+              << "    --time                 Displays current time"     << std::endl
+              << "    --cpu-color            Color for CPU load"        << std::endl
+              << "    --memory-color         Color for memory usage"    << std::endl
+              << "    --temperature-color    Color for temperature"     << std::endl
+              << "    --battery-color        Color for battery charge"  << std::endl
+              << "    --network-color        Color for network address" << std::endl
+              << "    --date-color           Color for current date"    << std::endl
+              << "    --time-color           Color for current time"    << std::endl
+              << std::endl
+              << "Available Colors: red, yellow, green, cyan, blue, magenta, black, white, clear"
+              << std::endl;
+}
