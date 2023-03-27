@@ -10,7 +10,9 @@ statusbar
 
 ### About
 
-Statusbar for your terminal.
+Statusbar for your terminal:
+
+![Screenshot](Assets/statusbar.png "Screenshot")
 
 ```
 Usage: statusbar [OPTIONS]
