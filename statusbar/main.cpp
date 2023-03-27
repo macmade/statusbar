@@ -157,18 +157,6 @@ int main( int argc, const char * argv[] )
                     hasLeftData = true;
                 }
 
-                if( options.temperature() && temperature.temperature() > 0 )
-                {
-                    if( hasLeftData )
-                    {
-                        left.print( "    " );
-                    }
-
-                    displayTemperature( options.temperatureColor(), left, temperature );
-
-                    hasLeftData = true;
-                }
-
                 if( options.battery() && battery.isAvailable() )
                 {
                     if( hasLeftData )
@@ -177,6 +165,18 @@ int main( int argc, const char * argv[] )
                     }
 
                     displayBattery( options.batteryColor(), left, battery );
+
+                    hasLeftData = true;
+                }
+
+                if( options.temperature() && temperature.temperature() > 0 )
+                {
+                    if( hasLeftData )
+                    {
+                        left.print( "    " );
+                    }
+
+                    displayTemperature( options.temperatureColor(), left, temperature );
 
                     hasLeftData = true;
                 }
