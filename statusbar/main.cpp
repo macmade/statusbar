@@ -234,7 +234,7 @@ void displayCPU( const SB::Color & color, SB::Window & window, const SB::CPULoad
 
     for( int i = 0; i < 10; i++ )
     {
-        if( cpu.total() / 10 < i )
+        if( cpu.total() / 10 < i || cpu.total() < 5 )
         {
             window.print( color, SB::Color::clear(), "\uf096 " );
         }
@@ -253,7 +253,7 @@ void displayGPU( const SB::Color & color, SB::Window & window, const SB::GPULoad
 
     for( int i = 0; i < 10; i++ )
     {
-        if( gpu.percent() / 10 < i )
+        if( gpu.percent() / 10 < i || gpu.percent() < 5 )
         {
             window.print( color, SB::Color::clear(), "\uf096 " );
         }
@@ -270,7 +270,7 @@ void displayMemory( const SB::Color & color, SB::Window & window, const SB::Memo
 
     for( int i = 0; i < 10; i++ )
     {
-        if( memory.percentUsed() / 10 < i )
+        if( memory.percentUsed() / 10 < i || memory.percentUsed() < 5 )
         {
             window.print( color, SB::Color::clear(), "\uf096 " );
         }
