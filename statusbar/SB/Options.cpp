@@ -184,12 +184,12 @@ namespace SB
         _network(          false ),
         _date(             false ),
         _time(             false ),
-        _cpuColor(         Color::green() ),
-        _gpuColor(         Color::magenta() ),
-        _memoryColor(      Color::blue() ),
+        _cpuColor(         Color::cyan() ),
+        _gpuColor(         Color::blue() ),
+        _memoryColor(      Color::magenta() ),
         _temperatureColor( Color::red() ),
         _batteryColor(     Color::yellow() ),
-        _networkColor(     Color::cyan() ),
+        _networkColor(     Color::green() ),
         _dateColor(        Color::cyan() ),
         _timeColor(        Color::magenta() )
     {
