@@ -37,6 +37,7 @@ namespace SB
             bool  _debug;
             bool  _help;
             bool  _cpu;
+            bool  _gpu;
             bool  _memory;
             bool  _temperature;
             bool  _battery;
@@ -44,6 +45,7 @@ namespace SB
             bool  _date;
             bool  _time;
             Color _cpuColor;
+            Color _gpuColor;
             Color _memoryColor;
             Color _temperatureColor;
             Color _batteryColor;
@@ -89,6 +91,11 @@ namespace SB
         return this->impl->_cpu;
     }
 
+    bool Options::gpu() const
+    {
+        return this->impl->_cpu;
+    }
+
     bool Options::memory() const
     {
         return this->impl->_memory;
@@ -122,6 +129,11 @@ namespace SB
     Color Options::cpuColor() const
     {
         return this->impl->_cpuColor;
+    }
+
+    Color Options::gpuColor() const
+    {
+        return this->impl->_gpuColor;
     }
 
     Color Options::memoryColor() const
@@ -165,6 +177,7 @@ namespace SB
         _debug(            false ),
         _help(             false ),
         _cpu(              false ),
+        _gpu(              false ),
         _memory(           false ),
         _temperature(      false ),
         _battery(          false ),
@@ -172,6 +185,7 @@ namespace SB
         _date(             false ),
         _time(             false ),
         _cpuColor(         Color::green() ),
+        _gpuColor(         Color::magenta() ),
         _memoryColor(      Color::blue() ),
         _temperatureColor( Color::red() ),
         _batteryColor(     Color::yellow() ),
@@ -186,6 +200,7 @@ namespace SB
             if( option == "--debug"       ) { this->_debug       = true; }
             if( option == "--help"        ) { this->_help        = true; }
             if( option == "--cpu"         ) { this->_cpu         = true; }
+            if( option == "--gpu"         ) { this->_gpu         = true; }
             if( option == "--memory"      ) { this->_memory      = true; }
             if( option == "--temperature" ) { this->_temperature = true; }
             if( option == "--battery"     ) { this->_battery     = true; }
@@ -194,6 +209,7 @@ namespace SB
             if( option == "--time"        ) { this->_time        = true; }
 
             if( i < argc - 1 && option == "--cpu-color"         ) { this->_cpuColor         = Color::color( argv[ ++i ] ); }
+            if( i < argc - 1 && option == "--gpu-color"         ) { this->_gpuColor         = Color::color( argv[ ++i ] ); }
             if( i < argc - 1 && option == "--memory-color"      ) { this->_memoryColor      = Color::color( argv[ ++i ] ); }
             if( i < argc - 1 && option == "--temperature-color" ) { this->_temperatureColor = Color::color( argv[ ++i ] ); }
             if( i < argc - 1 && option == "--battery-color"     ) { this->_batteryColor     = Color::color( argv[ ++i ] ); }
@@ -205,6 +221,7 @@ namespace SB
         if
         (
                this->_cpu         == false
+            && this->_gpu         == false
             && this->_memory      == false
             && this->_temperature == false
             && this->_battery     == false
@@ -214,6 +231,7 @@ namespace SB
         )
         {
             this->_cpu         = true;
+            this->_gpu         = true;
             this->_memory      = true;
             this->_temperature = true;
             this->_battery     = true;
@@ -227,6 +245,7 @@ namespace SB
         _debug(            o._debug ),
         _help(             o._help ),
         _cpu(              o._cpu ),
+        _gpu(              o._gpu ),
         _memory(           o._memory ),
         _temperature(      o._temperature ),
         _battery(          o._battery ),
@@ -234,6 +253,7 @@ namespace SB
         _date(             o._date ),
         _time(             o._time ),
         _cpuColor(         o._cpuColor ),
+        _gpuColor(         o._gpuColor ),
         _memoryColor(      o._memoryColor ),
         _temperatureColor( o._temperatureColor ),
         _batteryColor(     o._batteryColor ),

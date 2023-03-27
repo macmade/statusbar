@@ -24,6 +24,7 @@
 
 #include "SB/Screen.hpp"
 #include "SB/CPULoad.hpp"
+#include "SB/GPULoad.hpp"
 #include "SB/BatteryInfo.hpp"
 #include "SB/NetworkInfo.hpp"
 #include "SB/Options.hpp"
@@ -36,6 +37,7 @@
 #include <iostream>
 
 void displayCPU(         const SB::Color & color, SB::Window & window, const SB::CPULoad & cpu );
+void displayGPU(         const SB::Color & color, SB::Window & window, const SB::GPULoad & cpu );
 void displayMemory(      const SB::Color & color, SB::Window & window, const SB::MemoryInfo & memory );
 void displayBattery(     const SB::Color & color, SB::Window & window, const SB::BatteryInfo & battery );
 void displayTemperature( const SB::Color & color, SB::Window & window, const SB::TemperatureInfo & temperature );
@@ -57,6 +59,7 @@ int main( int argc, const char * argv[] )
     }
 
     if( options.cpu()         ) { SB::CPULoad::startObserving(); }
+    if( options.gpu()         ) { SB::GPULoad::startObserving(); }
     if( options.memory()      ) { SB::MemoryInfo::startObserving(); }
     if( options.battery()     ) { SB::BatteryInfo::startObserving(); }
     if( options.network()     ) { SB::NetworkInfo::startObserving(); }
@@ -91,6 +94,7 @@ int main( int argc, const char * argv[] )
             [ & ]
             {
                 SB::CPULoad         cpu         = SB::CPULoad::current();
+                SB::GPULoad         gpu         = SB::GPULoad::current();
                 SB::MemoryInfo      memory      = SB::MemoryInfo::current();
                 SB::BatteryInfo     battery     = SB::BatteryInfo::current();
                 SB::NetworkInfo     network     = SB::NetworkInfo::current();
@@ -110,6 +114,18 @@ int main( int argc, const char * argv[] )
                     }
 
                     displayCPU( options.cpuColor(), left, cpu );
+
+                    hasLeftData = true;
+                }
+
+                if( options.gpu() && gpu.percent() > 0 )
+                {
+                    if( hasLeftData )
+                    {
+                        left.print( "    " );
+                    }
+
+                    displayGPU( options.gpuColor(), left, gpu );
 
                     hasLeftData = true;
                 }
@@ -216,6 +232,23 @@ void displayCPU( const SB::Color & color, SB::Window & window, const SB::CPULoad
     window.print( color, SB::Color::clear(), " \uf007 %.0f%% \uf013 %.0f%%", cpu.user(), cpu.system() );
 }
 
+void displayGPU( const SB::Color & color, SB::Window & window, const SB::GPULoad & gpu )
+{
+    window.print( color, SB::Color::clear(), "\ueb4c GPU: %.0f%% ", gpu.percent() );
+
+    for( int i = 0; i < 10; i++ )
+    {
+        if( gpu.percent() / 10 < i )
+        {
+            window.print( color, SB::Color::clear(), "\uf096 " );
+        }
+        else
+        {
+            window.print( color, SB::Color::clear(), "\uf0c8 " );
+        }
+    }
+}
+
 void displayMemory( const SB::Color & color, SB::Window & window, const SB::MemoryInfo & memory )
 {
     window.print( color, SB::Color::clear(), "\uf1c0 Memory %.0f%% : ", memory.percentUsed() );
@@ -303,15 +336,17 @@ void showHelp()
               << "Options:"
               << std::endl
               << std::endl
-              << "    --help                 Shows this help dialog"   << std::endl
-              << "    --cpu                  Displays CPU load"        << std::endl
-              << "    --memory               Displays memory usage"     << std::endl
-              << "    --temperature          Displays temperature"      << std::endl
-              << "    --battery              Displays battery charge"   << std::endl
-              << "    --network              Displays network address"  << std::endl
-              << "    --date                 Displays current date"     << std::endl
-              << "    --time                 Displays current time"     << std::endl
+              << "    --help                 Show this help dialog"     << std::endl
+              << "    --cpu                  Display CPU load"          << std::endl
+              << "    --gpu                  Display GPU load"          << std::endl
+              << "    --memory               Display memory usage"      << std::endl
+              << "    --temperature          Display temperature"       << std::endl
+              << "    --battery              Display battery charge"    << std::endl
+              << "    --network              Display network address"   << std::endl
+              << "    --date                 Display current date"      << std::endl
+              << "    --time                 Display current time"      << std::endl
               << "    --cpu-color            Color for CPU load"        << std::endl
+              << "    --gpu-color            Color for GPU load"        << std::endl
               << "    --memory-color         Color for memory usage"    << std::endl
               << "    --temperature-color    Color for temperature"     << std::endl
               << "    --battery-color        Color for battery charge"  << std::endl

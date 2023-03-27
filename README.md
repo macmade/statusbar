@@ -19,15 +19,17 @@ Usage: statusbar [OPTIONS]
 
 Options:
 
-    --help                 Shows the help dialog
-    --cpu                  Displays CPU load
-    --memory               Displays memory usage
-    --temperature          Displays temperature
-    --battery              Displays battery charge
-    --network              Displays network address
-    --date                 Displays current date
-    --time                 Displays current time
+    --help                 Show the help dialog
+    --cpu                  Display CPU load
+    --gpu                  Display GPU load
+    --memory               Display memory usage
+    --temperature          Display temperature
+    --battery              Display battery charge
+    --network              Display network address
+    --date                 Display current date
+    --time                 Display current time
     --cpu-color            Color for CPU load
+    --gpu-color            Color for GPU load
     --memory-color         Color for memory usage
     --temperature-color    Color for temperature
     --battery-color        Color for battery charge

@@ -22,54 +22,39 @@
  * THE SOFTWARE.
  ******************************************************************************/
 
-#ifndef SB_OPTIONS_HPP
-#define SB_OPTIONS_HPP
+#ifndef SB_GPU_LOAD_HPP
+#define SB_GPU_LOAD_HPP
 
 #include <memory>
 #include <algorithm>
 #include <string>
-#include "SB/Color.hpp"
 
 namespace SB
 {
-    class Options
+    class GPULoad
     {
         public:
 
-            Options( int argc, const char ** argv );
-            Options( const Options & o );
-            Options( Options && o ) noexcept;
-            ~Options();
+            static void    startObserving();
+            static GPULoad current();
 
-            Options & operator =( Options o );
+            GPULoad( const GPULoad & o );
+            GPULoad( GPULoad && o ) noexcept;
+            ~GPULoad();
 
-            bool debug()       const;
-            bool help()        const;
-            bool cpu()         const;
-            bool gpu()         const;
-            bool memory()      const;
-            bool temperature() const;
-            bool battery()     const;
-            bool network()     const;
-            bool date()        const;
-            bool time()        const;
+            GPULoad & operator =( GPULoad o );
 
-            Color cpuColor()         const;
-            Color gpuColor()         const;
-            Color memoryColor()      const;
-            Color temperatureColor() const;
-            Color batteryColor()     const;
-            Color networkColor()     const;
-            Color dateColor()        const;
-            Color timeColor()        const;
+            double percent() const;
 
-            friend void swap( Options & o1, Options & o2 );
+            friend void swap( GPULoad & o1, GPULoad & o2 );
 
         private:
+
+            GPULoad( double percent );
 
             class IMPL;
             std::unique_ptr< IMPL > impl;
     };
 }
 
-#endif /* SB_OPTIONS_HPP */
+#endif /* SB_GPU_LOAD_HPP */

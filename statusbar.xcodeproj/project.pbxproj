@@ -17,6 +17,7 @@
 		0581834422E9ACFF008D1BFF /* Screen.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0581834222E9ACFF008D1BFF /* Screen.cpp */; };
 		0581834A22E9AE24008D1BFF /* libncurses.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 0581834922E9AE24008D1BFF /* libncurses.tbd */; };
 		05B2813322E77AC700110404 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 05B2813222E77AC700110404 /* main.cpp */; };
+		05C41D5329D202040056EA53 /* GPULoad.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 05C41D5129D202040056EA53 /* GPULoad.cpp */; };
 		05C965E629CC6BF60091F341 /* ColorPair.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 05C965E429CC6BF60091F341 /* ColorPair.cpp */; };
 		05D670DF29CCDC36000B2F56 /* CPULoad.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 05D670DD29CCDC36000B2F56 /* CPULoad.cpp */; };
 		05D670E229CCEF54000B2F56 /* String.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 05D670E029CCEF54000B2F56 /* String.cpp */; };
@@ -103,6 +104,8 @@
 		05B2818022E78A0300110404 /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
 		05B2818222E78A0300110404 /* ccache-config.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "ccache-config.sh"; sourceTree = "<group>"; };
 		05B2818322E78A0300110404 /* ccache.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = ccache.sh; sourceTree = "<group>"; };
+		05C41D5129D202040056EA53 /* GPULoad.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = GPULoad.cpp; sourceTree = "<group>"; };
+		05C41D5229D202040056EA53 /* GPULoad.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = GPULoad.hpp; sourceTree = "<group>"; };
 		05C965E429CC6BF60091F341 /* ColorPair.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ColorPair.cpp; sourceTree = "<group>"; };
 		05C965E529CC6BF60091F341 /* ColorPair.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = ColorPair.hpp; sourceTree = "<group>"; };
 		05D670DD29CCDC36000B2F56 /* CPULoad.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = CPULoad.cpp; sourceTree = "<group>"; };
@@ -298,6 +301,8 @@
 				05C965E529CC6BF60091F341 /* ColorPair.hpp */,
 				05D670DD29CCDC36000B2F56 /* CPULoad.cpp */,
 				05D670DE29CCDC36000B2F56 /* CPULoad.hpp */,
+				05C41D5129D202040056EA53 /* GPULoad.cpp */,
+				05C41D5229D202040056EA53 /* GPULoad.hpp */,
 				0566DDBD29CE18070031F6CC /* IOHID-Internal.h */,
 				0566DDBF29CE718A0031F6CC /* IOHID.cpp */,
 				0566DDC029CE718A0031F6CC /* IOHID.hpp */,
@@ -386,6 +391,7 @@
 				05D670F629CDDA2E000B2F56 /* Window.cpp in Sources */,
 				05B2813322E77AC700110404 /* main.cpp in Sources */,
 				0566DDBC29CE13380031F6CC /* TemperatureInfo.cpp in Sources */,
+				05C41D5329D202040056EA53 /* GPULoad.cpp in Sources */,
 				0566DDD729CE7A850031F6CC /* SMC.cpp in Sources */,
 				0566DDDC29D09C040031F6CC /* Options.cpp in Sources */,
 				0581834422E9ACFF008D1BFF /* Screen.cpp in Sources */,
