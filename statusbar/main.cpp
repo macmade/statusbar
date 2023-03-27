@@ -100,8 +100,23 @@ int main( int argc, const char * argv[] )
                 SB::NetworkInfo     network     = SB::NetworkInfo::current();
                 SB::TemperatureInfo temperature = SB::TemperatureInfo::current();
 
-                SB::Window left( 0, 0, screen.width() - 32, screen.height() );
-                SB::Window right( screen.width() - 32, 0, 32, screen.height() );
+                std::size_t leftWidth = 29;
+
+                if( options.date() == false && options.time() == false )
+                {
+                    leftWidth = 0;
+                }
+                else if( options.date() == false )
+                {
+                    leftWidth = 11;
+                }
+                else if( options.time() == false )
+                {
+                    leftWidth = 13;
+                }
+
+                SB::Window left( 0, 0, screen.width() - leftWidth, screen.height() );
+                SB::Window right( screen.width() - leftWidth, 0, leftWidth, screen.height() );
 
                 bool hasLeftData  = false;
                 bool hasRightData = false;
@@ -311,7 +326,7 @@ void displayDate( const SB::Color & color, SB::Window & window, time_t time )
     char buf[ 1024 ];
 
     memset( buf, 0, sizeof( buf ) );
-    strftime( buf, sizeof( buf ), "%d %B %Y", local );
+    strftime( buf, sizeof( buf ), "%d.%m.%Y", local );
 
     window.print( color, SB::Color::clear(), "\uf073  %s ", buf );
 }
@@ -336,23 +351,31 @@ void showHelp()
               << "Options:"
               << std::endl
               << std::endl
-              << "    --help                 Show this help dialog"     << std::endl
-              << "    --cpu                  Display CPU load"          << std::endl
-              << "    --gpu                  Display GPU load"          << std::endl
-              << "    --memory               Display memory usage"      << std::endl
-              << "    --temperature          Display temperature"       << std::endl
-              << "    --battery              Display battery charge"    << std::endl
-              << "    --network              Display network address"   << std::endl
-              << "    --date                 Display current date"      << std::endl
-              << "    --time                 Display current time"      << std::endl
-              << "    --cpu-color            Color for CPU load"        << std::endl
-              << "    --gpu-color            Color for GPU load"        << std::endl
-              << "    --memory-color         Color for memory usage"    << std::endl
-              << "    --temperature-color    Color for temperature"     << std::endl
-              << "    --battery-color        Color for battery charge"  << std::endl
-              << "    --network-color        Color for network address" << std::endl
-              << "    --date-color           Color for current date"    << std::endl
-              << "    --time-color           Color for current time"    << std::endl
+              << "    --help                 Show this help dialog"         << std::endl
+              << "    --cpu                  Display CPU load"              << std::endl
+              << "    --gpu                  Display GPU load"              << std::endl
+              << "    --memory               Display memory usage"          << std::endl
+              << "    --temperature          Display temperature"           << std::endl
+              << "    --battery              Display battery charge"        << std::endl
+              << "    --network              Display network address"       << std::endl
+              << "    --date                 Display current date"          << std::endl
+              << "    --time                 Display current time"          << std::endl
+              << "    --no-cpu               Don't display CPU load"        << std::endl
+              << "    --no-gpu               Don't display GPU load"        << std::endl
+              << "    --no-memory            Don't display memory usage"    << std::endl
+              << "    --no-temperature       Don't display temperature"     << std::endl
+              << "    --no-battery           Don't display battery charge"  << std::endl
+              << "    --no-network           Don't display network address" << std::endl
+              << "    --no-date              Don't display current date"    << std::endl
+              << "    --no-time              Don't display current time"    << std::endl
+              << "    --cpu-color            Color for CPU load"            << std::endl
+              << "    --gpu-color            Color for GPU load"            << std::endl
+              << "    --memory-color         Color for memory usage"        << std::endl
+              << "    --temperature-color    Color for temperature"         << std::endl
+              << "    --battery-color        Color for battery charge"      << std::endl
+              << "    --network-color        Color for network address"     << std::endl
+              << "    --date-color           Color for current date"        << std::endl
+              << "    --time-color           Color for current time"        << std::endl
               << std::endl
               << "Available Colors: red, yellow, green, cyan, blue, magenta, black, white, clear"
               << std::endl;

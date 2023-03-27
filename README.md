@@ -28,6 +28,14 @@ Options:
     --network              Display network address
     --date                 Display current date
     --time                 Display current time
+    --no-cpu               Don't display CPU load
+    --no-gpu               Don't display GPU load
+    --no-memory            Don't display memory usage
+    --no-temperature       Don't display temperature
+    --no-battery           Don't display battery charge
+    --no-network           Don't display network address
+    --no-date              Don't display current date
+    --no-time              Don't display current time
     --cpu-color            Color for CPU load
     --gpu-color            Color for GPU load
     --memory-color         Color for memory usage

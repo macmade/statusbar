@@ -93,7 +93,7 @@ namespace SB
 
     bool Options::gpu() const
     {
-        return this->impl->_cpu;
+        return this->impl->_gpu;
     }
 
     bool Options::memory() const
@@ -238,6 +238,20 @@ namespace SB
             this->_network     = true;
             this->_date        = true;
             this->_time        = true;
+        }
+
+        for( int i = 0; i < argc; i++ )
+        {
+            std::string option = argv[ i ];
+
+            if( option == "--no-cpu"         ) { this->_cpu         = false; }
+            if( option == "--no-gpu"         ) { this->_gpu         = false; }
+            if( option == "--no-memory"      ) { this->_memory      = false; }
+            if( option == "--no-temperature" ) { this->_temperature = false; }
+            if( option == "--no-battery"     ) { this->_battery     = false; }
+            if( option == "--no-network"     ) { this->_network     = false; }
+            if( option == "--no-date"        ) { this->_date        = false; }
+            if( option == "--no-time"        ) { this->_time        = false; }
         }
     }
 
