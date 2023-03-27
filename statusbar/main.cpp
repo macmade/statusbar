@@ -133,7 +133,7 @@ int main( int argc, const char * argv[] )
                     hasLeftData = true;
                 }
 
-                if( options.gpu() && gpu.percent() > 0 )
+                if( options.gpu() && gpu.percent() >= 0 )
                 {
                     if( hasLeftData )
                     {

@@ -154,13 +154,13 @@ namespace SB
 
         if( IOServiceGetMatchingServices( kIOMasterPortDefault, matching, &iterator ) != kIOReturnSuccess )
         {
-            return { 0 };
+            return { -1 };
         }
 
         io_registry_entry_t entry;
-        double              device   = 0;
-        double              renderer = 0;
-        double              tiler    = 0;
+        double              device   = -1;
+        double              renderer = -1;
+        double              tiler    = -1;
 
         while( ( entry = IOIteratorNext( iterator ) ) )
         {
