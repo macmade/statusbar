@@ -13,6 +13,27 @@ statusbar
 Statusbar for your terminal:
 
 ![Screenshot](Assets/statusbar.png "Screenshot")
+![CPU](Assets/cpu.png "CPU")
+![GPU](Assets/gpu.png "GPU")
+![Memory](Assets/memory.png "Memory")
+![Battery](Assets/battery.png "Battery")
+![Temperature](Assets/temperature.png "Temperature")
+![Network](Assets/network.png "Network")
+![DateTime](Assets/datetime.png "DateTime")
+
+### Installation
+
+```
+brew install --HEAD macmade/tap/statusbar 
+```
+
+For updates, run:
+
+```
+brew reinstall macmade/tap/statusbar 
+```
+
+### Usage
 
 ```
 Usage: statusbar [OPTIONS]
