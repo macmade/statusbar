@@ -22,21 +22,36 @@
  * THE SOFTWARE.
  ******************************************************************************/
 
-#ifndef SB_STRING_HPP
-#define SB_STRING_HPP
+#ifndef SB_UUID_HPP
+#define SB_UUID_HPP
 
 #include <string>
+#include <memory>
 
 namespace SB
 {
-    namespace String
+    class UUID
     {
-        std::string format( const char * format, ... ) __printflike( 1, 2 );
-        std::string bytesToHumanReadable( uint64_t bytes );
-        bool        hasSuffix( const std::string & str, const std::string & suffix );
-        std::string fourCC( uint32_t c );
-        std::string toLower( const std::string & s );
-    }
+        public:
+
+            UUID( void );
+            UUID( const UUID & o );
+            UUID( UUID && o ) noexcept;
+            ~UUID( void );
+
+            UUID & operator =( UUID o );
+
+            bool operator ==( const UUID & o ) const;
+            bool operator !=( const UUID & o ) const;
+
+            friend void swap( UUID & o1, UUID & o2 );
+
+        private:
+
+            class IMPL;
+
+            std::unique_ptr< IMPL > impl;
+        };
 }
 
-#endif /* SB_STRING_HPP */
+#endif /* SB_UUID_HPP */

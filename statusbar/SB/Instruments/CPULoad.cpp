@@ -24,6 +24,7 @@
 
 #include "SB/Instruments/CPULoad.hpp"
 #include "SB/Helpers/Vector.hpp"
+#include "SB/SleepManager.hpp"
 #include <mutex>
 #include <thread>
 #include <unistd.h>
@@ -60,6 +61,8 @@ namespace SB
             static std::recursive_mutex * rmtx;
             static CPULoad              * load;
             static bool                   observing;
+            static bool                   sleeping;
+            static UUID                 * sleepRegistration;
     };
 
     void CPULoad::startObserving()
@@ -160,8 +163,28 @@ namespace SB
             once,
             []
             {
-                rmtx = new std::recursive_mutex();
-                load = new CPULoad( 0, 0, 0, 0 );
+                rmtx              = new std::recursive_mutex();
+                load              = new CPULoad( 0, 0, 0, 0 );
+                sleeping          = false;
+                sleepRegistration = new UUID
+                (
+                    SleepManager::shared().subscribe
+                    (
+                        []( SleepManager::Event e )
+                        {
+                            std::lock_guard< std::recursive_mutex > l( *( rmtx ) );
+
+                            if( e == SleepManager::Event::WillSleep )
+                            {
+                                sleeping = true;
+                            }
+                            else if( e == SleepManager::Event::DidPowerOn )
+                            {
+                                sleeping = false;
+                            }
+                        }
+                    )
+                );
             }
         );
     }
@@ -170,6 +193,13 @@ namespace SB
     {
         while( true )
         {
+            if( sleeping )
+            {
+                std::this_thread::sleep_for( std::chrono::seconds( 2 ) );
+
+                continue;
+            }
+
             std::vector< CPULoadInfo > info1 = IMPL::getCPULoadInfo();
 
             std::this_thread::sleep_for( std::chrono::seconds( 1 ) );
@@ -248,7 +278,9 @@ namespace SB
         return info;
     }
 
-    std::recursive_mutex * CPULoad::IMPL::rmtx      = nullptr;
-    CPULoad              * CPULoad::IMPL::load      = nullptr;
-    bool                   CPULoad::IMPL::observing = false;
+    std::recursive_mutex * CPULoad::IMPL::rmtx              = nullptr;
+    CPULoad              * CPULoad::IMPL::load              = nullptr;
+    bool                   CPULoad::IMPL::observing         = false;
+    bool                   CPULoad::IMPL::sleeping          = false;
+    UUID                 * CPULoad::IMPL::sleepRegistration = nullptr;
 }

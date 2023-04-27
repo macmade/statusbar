@@ -23,6 +23,7 @@
  ******************************************************************************/
 
 #include "SB/UpdateQueue.hpp"
+#include "SB/SleepManager.hpp"
 #include <mutex>
 #include <vector>
 #include <thread>
@@ -36,29 +37,29 @@ namespace SB
             IMPL();
             ~IMPL();
 
-            std::vector< std::function< void() > > _functions;
+            void run();
 
-            static std::recursive_mutex * rmtx;
-            static UpdateQueue          * queue;
+            std::vector< std::function< void() > > _functions;
+            std::recursive_mutex                   _rmtx;
+            bool                                   _sleeping;
+            UUID                                   _sleepRegistration;
     };
 
     UpdateQueue & UpdateQueue::shared()
     {
+        static UpdateQueue  * queue;
         static std::once_flag once;
 
         std::call_once
         (
             once,
-            []
+            [ & ]
             {
-                IMPL::rmtx  = new std::recursive_mutex();
-                IMPL::queue = new UpdateQueue();
-
-                IMPL::queue->run();
+                queue = new UpdateQueue();
             }
         );
 
-        return *( IMPL::queue );
+        return *( queue );
     }
 
     UpdateQueue::UpdateQueue():
@@ -70,12 +71,40 @@ namespace SB
 
     void UpdateQueue::registerUpdate( const std::function< void() > & f )
     {
-        std::lock_guard< std::recursive_mutex > l( *( IMPL::rmtx ) );
+        std::lock_guard< std::recursive_mutex > l( this->impl->_rmtx );
 
         this->impl->_functions.push_back( f );
     }
 
-    void UpdateQueue::run()
+    UpdateQueue::IMPL::IMPL():
+        _sleeping( false )
+    {
+        this->_sleepRegistration = SleepManager::shared().subscribe
+        (
+            [ & ]( SleepManager::Event e )
+            {
+                std::lock_guard< std::recursive_mutex > l( this->_rmtx );
+
+                if( e == SleepManager::Event::WillSleep )
+                {
+                    this->_sleeping = true;
+                }
+                else if( e == SleepManager::Event::DidPowerOn )
+                {
+                    this->_sleeping = false;
+                }
+            }
+        );
+
+        this->run();
+    }
+
+    UpdateQueue::IMPL::~IMPL()
+    {
+        SleepManager::shared().unsubscribe( this->_sleepRegistration );
+    }
+
+    void UpdateQueue::IMPL::run()
     {
         std::thread
         (
@@ -83,12 +112,19 @@ namespace SB
             {
                 while( true )
                 {
+                    if( this->_sleeping )
+                    {
+                        std::this_thread::sleep_for( std::chrono::seconds( 2 ) );
+
+                        continue;
+                    }
+
                     std::vector< std::function< void() > > functions;
 
                     {
-                        std::lock_guard< std::recursive_mutex > l( *( IMPL::rmtx ) );
+                        std::lock_guard< std::recursive_mutex > l( this->_rmtx );
 
-                        functions = this->impl->_functions;
+                        functions = this->_functions;
                     }
 
                     for( const auto & f: functions )
@@ -102,13 +138,4 @@ namespace SB
         )
         .detach();
     }
-
-    UpdateQueue::IMPL::IMPL()
-    {}
-
-    UpdateQueue::IMPL::~IMPL()
-    {}
-
-    std::recursive_mutex * UpdateQueue::IMPL::rmtx  = nullptr;
-    UpdateQueue          * UpdateQueue::IMPL::queue = nullptr;
 }

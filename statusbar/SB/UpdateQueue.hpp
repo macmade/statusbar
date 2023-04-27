@@ -46,8 +46,6 @@ namespace SB
 
             UpdateQueue();
             ~UpdateQueue();
-
-            void run();
             
             class IMPL;
             std::unique_ptr< IMPL > impl;

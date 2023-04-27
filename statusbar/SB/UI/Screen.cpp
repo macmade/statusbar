@@ -24,6 +24,7 @@
 
 #include "SB/UI/Screen.hpp"
 #include "SB/UI/ColorPair.hpp"
+#include "SB/SleepManager.hpp"
 #include <algorithm>
 #include <ncurses.h>
 #include <sys/ioctl.h>
@@ -52,6 +53,8 @@ namespace SB
             std::size_t          _height;
             bool                 _colors;
             bool                 _running;
+            bool                 _sleeping;
+            UUID                 _sleepRegistration;
             std::recursive_mutex _rmtx;
     };
     
@@ -242,7 +245,15 @@ namespace SB
             }
             
             this->refresh();
-            std::this_thread::sleep_for( std::chrono::milliseconds( refreshInterval ) );
+
+            if( this->impl->_sleeping )
+            {
+                std::this_thread::sleep_for( std::chrono::seconds( 2 ) );
+            }
+            else
+            {
+                std::this_thread::sleep_for( std::chrono::milliseconds( refreshInterval ) );
+            }
         }
         
         this->clear();
@@ -283,11 +294,31 @@ namespace SB
         _width( 0 ),
         _height( 0 ),
         _colors( false ),
-        _running( false )
-    {}
+        _running( false ),
+        _sleeping( false )
+    {
+        this->_sleepRegistration = SleepManager::shared().subscribe
+        (
+            [ & ]( SleepManager::Event e )
+            {
+                std::lock_guard< std::recursive_mutex > l( this->_rmtx );
+
+                if( e == SleepManager::Event::WillSleep )
+                {
+                    this->_sleeping = true;
+                }
+                else if( e == SleepManager::Event::DidPowerOn )
+                {
+                    this->_sleeping = false;
+                }
+            }
+        );
+    }
     
     Screen::IMPL::~IMPL()
     {
+        SleepManager::shared().unsubscribe( this->_sleepRegistration );
+
         ::clrtoeol();
         ::refresh();
         ::endwin();

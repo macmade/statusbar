@@ -22,21 +22,79 @@
  * THE SOFTWARE.
  ******************************************************************************/
 
-#ifndef SB_STRING_HPP
-#define SB_STRING_HPP
-
-#include <string>
+#include "SB/UUID.hpp"
+#include "SB/Helpers/String.hpp"
+#include <uuid/uuid.h>
+#include <mutex>
 
 namespace SB
 {
-    namespace String
+    class UUID::IMPL
     {
-        std::string format( const char * format, ... ) __printflike( 1, 2 );
-        std::string bytesToHumanReadable( uint64_t bytes );
-        bool        hasSuffix( const std::string & str, const std::string & suffix );
-        std::string fourCC( uint32_t c );
-        std::string toLower( const std::string & s );
-    }
-}
+        public:
 
-#endif /* SB_STRING_HPP */
+            IMPL( void );
+            IMPL( const IMPL & o );
+            ~IMPL();
+
+            std::string _uuid;
+    };
+
+    UUID::UUID( void ):
+        impl( std::make_unique< IMPL >() )
+    {}
+
+    UUID::UUID( const UUID & o ):
+        impl( std::make_unique< IMPL >( *( o.impl ) ) )
+    {}
+
+    UUID::UUID( UUID && o ) noexcept:
+        impl( std::move( o.impl ) )
+    {}
+
+    UUID::~UUID( void )
+    {}
+
+    UUID & UUID::operator =( UUID o )
+    {
+        swap( *( this ), o );
+
+        return *( this );
+    }
+
+    bool UUID::operator ==( const UUID & o ) const
+    {
+        return this->impl->_uuid == o.impl->_uuid;
+    }
+
+    bool UUID::operator !=( const UUID & o ) const
+    {
+        return !operator ==( o );
+    }
+
+    void swap( UUID & o1, UUID & o2 )
+    {
+        using std::swap;
+
+        swap( o1.impl, o2.impl );
+    }
+
+    UUID::IMPL::IMPL( void )
+    {
+        uuid_t uuid;
+        char   s[ 37 ];
+
+        uuid_generate_random( uuid );
+        memset( s, 0, sizeof( s ) );
+        uuid_unparse( uuid, s );
+
+        this->_uuid = String::toLower( std::string( s ) );
+    }
+
+    UUID::IMPL::IMPL( const IMPL & o ):
+        _uuid( o._uuid )
+    {}
+
+    UUID::IMPL::~IMPL()
+    {}
+}

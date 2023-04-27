@@ -101,5 +101,14 @@ namespace SB
 
             return String::format( "%c%c%c%c", c1, c2, c3, c4 );
         }
+        
+        std::string toLower( const std::string & s )
+        {
+            std::string ret( s );
+
+            std::transform( ret.begin(), ret.end(), ret.begin(), ::tolower );
+
+            return ret;
+        }
     }
 }

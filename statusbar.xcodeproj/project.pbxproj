@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		053B4B1822F5F60D002C6AB9 /* Color.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 053B4B1622F5F60D002C6AB9 /* Color.cpp */; };
+		0562C76329F9105200D1B8B2 /* SleepManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0562C76129F9105200D1B8B2 /* SleepManager.cpp */; };
 		0566DDBC29CE13380031F6CC /* TemperatureInfo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0566DDBA29CE13380031F6CC /* TemperatureInfo.cpp */; };
 		0566DDC129CE718A0031F6CC /* IOHID.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0566DDBF29CE718A0031F6CC /* IOHID.cpp */; };
 		0566DDD729CE7A850031F6CC /* SMC.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0566DDD529CE7A850031F6CC /* SMC.cpp */; };
@@ -26,6 +27,7 @@
 		05D670FB29CDE160000B2F56 /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 05D670FA29CDE160000B2F56 /* IOKit.framework */; };
 		05D6711629CDE46F000B2F56 /* BatteryInfo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 05D6711429CDE46F000B2F56 /* BatteryInfo.cpp */; };
 		05D6711929CDF5CE000B2F56 /* MemoryInfo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 05D6711729CDF5CE000B2F56 /* MemoryInfo.cpp */; };
+		05DBEC1529FA5FFB009624EA /* UUID.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 05DBEC1429FA5FFB009624EA /* UUID.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -43,6 +45,8 @@
 /* Begin PBXFileReference section */
 		053B4B1622F5F60D002C6AB9 /* Color.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Color.cpp; sourceTree = "<group>"; };
 		053B4B1722F5F60D002C6AB9 /* Color.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Color.hpp; sourceTree = "<group>"; };
+		0562C76129F9105200D1B8B2 /* SleepManager.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = SleepManager.cpp; sourceTree = "<group>"; };
+		0562C76229F9105200D1B8B2 /* SleepManager.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = SleepManager.hpp; sourceTree = "<group>"; };
 		0566DDBA29CE13380031F6CC /* TemperatureInfo.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = TemperatureInfo.cpp; sourceTree = "<group>"; };
 		0566DDBB29CE13380031F6CC /* TemperatureInfo.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = TemperatureInfo.hpp; sourceTree = "<group>"; };
 		0566DDBD29CE18070031F6CC /* IOHID-Internal.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "IOHID-Internal.h"; sourceTree = "<group>"; };
@@ -122,6 +126,8 @@
 		05D6711529CDE46F000B2F56 /* BatteryInfo.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = BatteryInfo.hpp; sourceTree = "<group>"; };
 		05D6711729CDF5CE000B2F56 /* MemoryInfo.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = MemoryInfo.cpp; sourceTree = "<group>"; };
 		05D6711829CDF5CE000B2F56 /* MemoryInfo.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = MemoryInfo.hpp; sourceTree = "<group>"; };
+		05DBEC1329FA5FFB009624EA /* UUID.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = UUID.hpp; sourceTree = "<group>"; };
+		05DBEC1429FA5FFB009624EA /* UUID.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = UUID.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -299,6 +305,10 @@
 				05C41D5429D214D60056EA53 /* UI */,
 				0566DDF329D0B0900031F6CC /* UpdateQueue.cpp */,
 				0566DDF429D0B0900031F6CC /* UpdateQueue.hpp */,
+				0562C76129F9105200D1B8B2 /* SleepManager.cpp */,
+				0562C76229F9105200D1B8B2 /* SleepManager.hpp */,
+				05DBEC1429FA5FFB009624EA /* UUID.cpp */,
+				05DBEC1329FA5FFB009624EA /* UUID.hpp */,
 			);
 			path = SB;
 			sourceTree = "<group>";
@@ -419,8 +429,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				05DBEC1529FA5FFB009624EA /* UUID.cpp in Sources */,
 				0566DDF529D0B0900031F6CC /* UpdateQueue.cpp in Sources */,
 				05D670F629CDDA2E000B2F56 /* Window.cpp in Sources */,
+				0562C76329F9105200D1B8B2 /* SleepManager.cpp in Sources */,
 				05B2813322E77AC700110404 /* main.cpp in Sources */,
 				0566DDBC29CE13380031F6CC /* TemperatureInfo.cpp in Sources */,
 				05C41D5329D202040056EA53 /* GPULoad.cpp in Sources */,
