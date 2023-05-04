@@ -222,7 +222,7 @@ int main( int argc, const char * argv[] )
             }
         );
 
-        screen.start( 500 );
+        screen.start( 1000 );
     }
 
     return 0;

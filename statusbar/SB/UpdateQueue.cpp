@@ -114,7 +114,7 @@ namespace SB
                 {
                     if( this->_sleeping )
                     {
-                        std::this_thread::sleep_for( std::chrono::seconds( 2 ) );
+                        std::this_thread::sleep_for( std::chrono::seconds( 5 ) );
 
                         continue;
                     }
