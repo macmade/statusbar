@@ -247,6 +247,28 @@ namespace SB
                     continue;
                 }
 
+                SMCKeyInfoData keyInfo;
+                uint8_t        data[ 32 ];
+                uint32_t       size = sizeof( data );
+
+                if( SMC::readSMCKey( IMPL::smcConnection, key, data, size, keyInfo, *( IMPL::smcCache ) ) == false )
+                {
+                    continue;
+                }
+
+                std::string name = String::fourCC( key );
+                std::string type = String::fourCC( keyInfo.dataType );
+
+                if( name.length() == 0 || name[ 0 ] != 'T' )
+                {
+                    continue;
+                }
+
+                if( type != "ioft" && type != "flt " )
+                {
+                    continue;
+                }
+
                 if( key != 0 )
                 {
                     IMPL::smcKeys->push_back( key );
@@ -267,13 +289,7 @@ namespace SB
                 continue;
             }
 
-            std::string name = String::fourCC( key );
             std::string type = String::fourCC( keyInfo.dataType );
-
-            if( name.length() == 0 || name[ 0 ] != 'T' )
-            {
-                continue;
-            }
 
             double value = 0;
 
