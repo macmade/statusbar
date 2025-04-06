@@ -162,14 +162,14 @@ namespace SB
 
         if( this->supportsColors() )
         {
-            ::attrset( COLOR_PAIR( ColorPair::pairForColors( foreground, background ) ) );
+            ::attrset( static_cast< int >( COLOR_PAIR( ColorPair::pairForColors( foreground, background ) ) ) );
         }
 
         ::printw( s.c_str() );
 
         if( this->supportsColors() )
         {
-            ::attrset( COLOR_PAIR( ColorPair::pairForColors( Color::clear(), Color::clear() ) ) );
+            ::attrset( static_cast< int >( COLOR_PAIR( ColorPair::pairForColors( Color::clear(), Color::clear() ) ) ) );
         }
     }
     

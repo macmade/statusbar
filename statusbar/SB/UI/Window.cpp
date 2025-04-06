@@ -95,14 +95,14 @@ namespace SB
     {
         if( Screen::shared().supportsColors() )
         {
-            ::wattrset( this->impl->_win, COLOR_PAIR( ColorPair::pairForColors( foreground, background ) ) );
+            ::wattrset( this->impl->_win, static_cast< int >( COLOR_PAIR( ColorPair::pairForColors( foreground, background ) ) ) );
         }
         
         ::wprintw( this->impl->_win, s.c_str() );
         
         if( Screen::shared().supportsColors() )
         {
-            ::wattrset( this->impl->_win, COLOR_PAIR( ColorPair::pairForColors( Color::clear(), Color::clear() ) ) );
+            ::wattrset( this->impl->_win, static_cast< int >( COLOR_PAIR( ColorPair::pairForColors( Color::clear(), Color::clear() ) ) ) );
         }
     }
     
@@ -114,14 +114,14 @@ namespace SB
         
         if( Screen::shared().supportsColors() )
         {
-            ::wattrset( this->impl->_win, COLOR_PAIR( ColorPair::pairForColors( foreground, background ) ) );
+            ::wattrset( this->impl->_win, static_cast< int >( COLOR_PAIR( ColorPair::pairForColors( foreground, background ) ) ) );
         }
         
         ::vw_printw( this->impl->_win, format, ap );
         
         if( Screen::shared().supportsColors() )
         {
-            ::wattrset( this->impl->_win, COLOR_PAIR( ColorPair::pairForColors( Color::clear(), Color::clear() ) ) );
+            ::wattrset( this->impl->_win, static_cast< int >( COLOR_PAIR( ColorPair::pairForColors( Color::clear(), Color::clear() ) ) ) );
         }
         
         va_end( ap );
