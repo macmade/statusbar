@@ -164,22 +164,14 @@ namespace SB
 
         while( ( entry = IOIteratorNext( iterator ) ) )
         {
-            CFMutableDictionaryRef properties;
+            CFTypeRef property = IORegistryEntrySearchCFProperty( entry, kIOServicePlane, CFSTR( "PerformanceStatistics" ), kCFAllocatorDefault, kNilOptions );
 
-            if( IORegistryEntryCreateCFProperties( entry, &properties, kCFAllocatorDefault, kNilOptions ) != kIOReturnSuccess )
+            if( property != nullptr && CFGetTypeID( property ) == CFDictionaryGetTypeID() )
             {
-                IOObjectRelease( entry );
-
-                continue;
-            }
-
-            CFDictionaryRef stats = static_cast< CFDictionaryRef >( CFDictionaryGetValue( properties, CFSTR( "PerformanceStatistics" ) ) );
-
-            if( stats != nullptr && CFGetTypeID( stats ) == CFDictionaryGetTypeID() )
-            {
-                CFNumberRef cfDevice   = static_cast< CFNumberRef >( CFDictionaryGetValue( stats, CFSTR( "Device Utilization %" ) ) );
-                CFNumberRef cfRenderer = static_cast< CFNumberRef >( CFDictionaryGetValue( stats, CFSTR( "Renderer Utilization %" ) ) );
-                CFNumberRef cfTiler    = static_cast< CFNumberRef >( CFDictionaryGetValue( stats, CFSTR( "Tiler Utilization %" ) ) );
+                CFDictionaryRef stats      = static_cast< CFDictionaryRef >( property );
+                CFNumberRef     cfDevice   = static_cast< CFNumberRef >( CFDictionaryGetValue( stats, CFSTR( "Device Utilization %" ) ) );
+                CFNumberRef     cfRenderer = static_cast< CFNumberRef >( CFDictionaryGetValue( stats, CFSTR( "Renderer Utilization %" ) ) );
+                CFNumberRef     cfTiler    = static_cast< CFNumberRef >( CFDictionaryGetValue( stats, CFSTR( "Tiler Utilization %" ) ) );
 
                 if( cfDevice != nullptr && CFGetTypeID( cfDevice ) == CFNumberGetTypeID() )
                 {
@@ -197,7 +189,11 @@ namespace SB
                 }
             }
 
-            CFRelease( properties );
+            if( property != nullptr )
+            {
+                CFRelease( property );
+            }
+
             IOObjectRelease( entry );
         }
 

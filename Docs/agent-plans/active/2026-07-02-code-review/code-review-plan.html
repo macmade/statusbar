@@ -458,11 +458,17 @@ va_end( ap );</code></pre>
             <li>Measure GPU-poll cost before and after; record the delta.</li>
         </ul>
         <p><span class="label">Status</span></p>
-        <p><span class="pill st-notstarted">Not started</span></p>
+        <p><span class="pill st-completed">Completed</span></p>
         <p><span class="label">Completed</span></p>
-        <p class="fill"></p>
+        <p class="fill">2026-07-06</p>
         <p><span class="label">Implementation notes</span></p>
-        <p class="fill"></p>
+        <div class="fill">
+            <p>Replaced the full-dictionary snapshot in <code>getGPULoad()</code> (<code>GPULoad.cpp</code>) with a single-property fetch. Per matched IOAccelerator entry, instead of <code>IORegistryEntryCreateCFProperties()</code> (which materializes the entry's whole property table) followed by a borrowed <code>CFDictionaryGetValue( ..., "PerformanceStatistics" )</code>, it now calls <code>IORegistryEntrySearchCFProperty( entry, kIOServicePlane, CFSTR( "PerformanceStatistics" ), kCFAllocatorDefault, kNilOptions )</code> and reads the three utilization numbers from that.</p>
+            <p>Verified against the SDK header (<code>IOKitLib.h</code>): with no <code>kIORegistryIterateRecursively</code>, <code>IORegistryEntrySearchCFProperty</code> "degenerates into the standard <code>IORegistryEntryCreateCFProperty()</code> call" — it reads the entry's own property table only, which matches the old behavior since <code>PerformanceStatistics</code> is a direct top-level property (no recursion/alternate plane needed; the plane arg is inert without the recursion flag). The utilization values are therefore unchanged.</p>
+            <p><strong>Ownership change handled:</strong> the search API is <code>CF_RETURNS_RETAINED</code>, so the returned <code>property</code> is now owned and is <code>CFRelease</code>d exactly once on every path — guarded by <code>if( property != nullptr )</code> to avoid <code>CFRelease(NULL)</code>. The inner <code>stats</code> is just a cast alias of <code>property</code> (not released separately → no double-free); the borrowed <code>CFDictionaryGetValue</code> numbers are correctly not released; <code>IOObjectRelease(entry)</code> still runs every iteration. The former error-return <code>continue</code> path is gone (a not-found search returns NULL, which simply skips the block). <code>device</code>/<code>renderer</code>/<code>tiler</code> defaults (-1) and the final <code>std::max</code> result are unchanged.</p>
+            <p><strong>Energy measurement (pending):</strong> the plan asks for a before/after GPU-poll cost delta via <code>powermetrics</code>/Instruments and an on-hardware value match; that requires running the widget interactively, so it was <em>not</em> captured in this environment and needs a hands-on measurement by the maintainer.</p>
+            <p>Verified with <code>xcodebuild ... -configuration Debug build</code>: <strong>BUILD SUCCEEDED</strong>, no warnings under <code>-Werror</code>. <strong>Automated review loop:</strong> 1 round, converged. The fresh-context reviewer confirmed correct CF ownership (release once on all paths, no leak/double-free/<code>CFRelease(NULL)</code>), behavioral equivalence, unchanged defaults/return, and clean style. No Critical/High/Medium/Low findings; one Info note (pre-existing trailing whitespace on the line before <code>return</code>, not part of this diff) left untouched.</p>
+        </div>
         <p><span class="label">Review comments</span></p>
         <p class="fill"></p>
     </div>
