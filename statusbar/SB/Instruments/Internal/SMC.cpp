@@ -24,6 +24,7 @@
 
 #include "SB/Instruments/Internal/SMC.hpp"
 #include <cmath>
+#include <cstring>
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wfour-char-constants"
@@ -270,7 +271,11 @@ namespace SB
                 return 0;
             }
 
-            return static_cast< double >( *( reinterpret_cast< float * >( &u32 ) ) );
+            float f = 0;
+
+            std::memcpy( &f, &u32, sizeof( f ) );
+
+            return static_cast< double >( f );
         }
 
         double readIOFloat( uint8_t * data, uint32_t size )

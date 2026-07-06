@@ -343,11 +343,16 @@ va_end( ap );</code></pre>
             <li>Verify decoded temperature values are unchanged.</li>
         </ul>
         <p><span class="label">Status</span></p>
-        <p><span class="pill st-notstarted">Not started</span></p>
+        <p><span class="pill st-completed">Completed</span></p>
         <p><span class="label">Completed</span></p>
-        <p class="fill"></p>
+        <p class="fill">2026-07-06</p>
         <p><span class="label">Implementation notes</span></p>
-        <p class="fill"></p>
+        <div class="fill">
+            <p>Replaced the strict-aliasing type-pun in <code>readFloat32()</code> (<code>SMC.cpp:273</code>). The old <code>static_cast&lt; double &gt;( *( reinterpret_cast&lt; float * &gt;( &amp;u32 ) ) )</code> read a <code>uint32_t</code> object through a <code>float</code> lvalue — UB under strict aliasing, and the project builds with <code>-fstrict-aliasing</code>. Now copies the bits with <code>std::memcpy( &amp;f, &amp;u32, sizeof( f ) )</code> into a <code>float f</code>, then widens to <code>double</code>.</p>
+            <p>Confirmed the project standard is <strong>C++17</strong> (<code>CLANG_CXX_LANGUAGE_STANDARD = c++17</code> in the xcconfig submodule), so <code>std::bit_cast</code> (C++20) is unavailable — <code>std::memcpy</code> is the correct tool. Added <code>#include &lt;cstring&gt;</code> (the file previously included only <code>&lt;cmath&gt;</code>). The copy is exactly 4 bytes (<code>sizeof(float) == sizeof(uint32_t) == 4</code>) with no over/under-read, reproduces the same in-memory byte reinterpretation as before (no endianness change; <code>readUInt32</code>'s byte assembly is upstream and untouched), and preserves the <code>size != 4</code> and <code>u32 == 0</code> early returns and all IEEE-754 special-value encodings. Declaration/call/return separated by blank lines per house style.</p>
+            <p>Verified with <code>xcodebuild ... -configuration Debug build</code>: <strong>BUILD SUCCEEDED</strong>, no warnings under <code>-Werror</code> (<code>sizeof</code> yields <code>size_t</code> matching <code>memcpy</code>'s parameter, no <code>-Wconversion</code>/<code>-Wold-style-cast</code>/<code>-Wuninitialized</code> risk).</p>
+            <p><strong>Automated review loop:</strong> 1 round, converged. The fresh-context reviewer confirmed the standard, identical bit reinterpretation, exact copy size, genuine elimination of the aliasing UB, correct <code>&lt;cstring&gt;</code> declaration, no <code>-Werror</code> risk, unchanged special-value behavior, and consistent style. No Critical/High/Medium/Low findings. Info only: <code>std::memcpy</code> is qualified while the file uses unqualified <code>pow</code> — a stylistic inconsistency, not a defect; left as the more defensible qualified form.</p>
+        </div>
         <p><span class="label">Review comments</span></p>
         <p class="fill"></p>
     </div>
