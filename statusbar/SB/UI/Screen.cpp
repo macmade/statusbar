@@ -147,7 +147,7 @@ namespace SB
     {
         std::lock_guard< std::recursive_mutex > l( this->impl->_rmtx );
 
-        ::printw( s.c_str() );
+        ::printw( "%s", s.c_str() );
     }
 
     void Screen::print( const Color & foreground, const std::string & s )
@@ -164,7 +164,7 @@ namespace SB
             ::attrset( static_cast< int >( COLOR_PAIR( ColorPair::pairForColors( foreground, background ) ) ) );
         }
 
-        ::printw( s.c_str() );
+        ::printw( "%s", s.c_str() );
 
         if( this->supportsColors() )
         {

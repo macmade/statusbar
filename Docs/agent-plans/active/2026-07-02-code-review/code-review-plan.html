@@ -375,11 +375,22 @@ va_end( ap );</code></pre>
             <li>Verify output rendering is unchanged.</li>
         </ul>
         <p><span class="label">Status</span></p>
-        <p><span class="pill st-notstarted">Not started</span></p>
+        <p><span class="pill st-completed">Completed</span></p>
         <p><span class="label">Completed</span></p>
-        <p class="fill"></p>
+        <p class="fill">2026-07-06</p>
         <p><span class="label">Implementation notes</span></p>
-        <p class="fill"></p>
+        <div class="fill">
+            <p>Changed the runtime-string-forwarding <code>printw</code>/<code>wprintw</code> calls to use a literal <code>"%s"</code> format so a <code>%</code> in the string can no longer be interpreted as a conversion specifier (which would read nonexistent varargs). Fixed <strong>four</strong> sites, not just the two named in the plan: grepping for other call sites (task 3) surfaced the two color overloads as well:</p>
+            <ul>
+                <li><code>Screen::print( const std::string &amp; )</code> — <code>Screen.cpp:150</code></li>
+                <li><code>Screen::print( const Color &amp;, const Color &amp;, const std::string &amp; )</code> — <code>Screen.cpp:167</code></li>
+                <li><code>Window::print( const std::string &amp; )</code> — <code>Window.cpp:82</code></li>
+                <li><code>Window::print( const Color &amp;, const Color &amp;, const std::string &amp; )</code> — <code>Window.cpp:101</code></li>
+            </ul>
+            <p>The two variadic <code>Window::print( ..., const char * format, ... )</code> overloads that call <code>::vw_printw( win, format, ap )</code> were left unchanged — those are legitimate printf-style APIs where the caller intentionally supplies a format string; adding <code>"%s"</code> there would break them. A full grep confirmed there are no other <code>printw</code>/<code>mvprintw</code>/<code>mvwprintw</code> sites. Output is byte-identical for the current (%-free) callers.</p>
+            <p>Kept the diff minimal (only the four <code>printw</code> lines change; restored the trailing whitespace on one adjacent blank line so no unrelated formatting appears in the diff). Verified with <code>xcodebuild ... -configuration Debug build</code>: <strong>BUILD SUCCEEDED</strong>, no warnings under <code>-Werror</code> (<code>"%s"</code> + one <code>const char *</code> is the canonical <code>-Wformat</code>-safe form). The pre-existing <code>unix.BlockInCriticalSection</code> note on <code>getc</code> (M13 area) is unrelated.</p>
+            <p><strong>Automated review loop:</strong> 1 round, converged. The fresh-context reviewer independently classified all six <code>printw</code>-family sites, confirmed all four runtime-string sites are fixed and both legitimate format APIs correctly untouched, output preserved, no warning risk, and clean diff hygiene. No Critical/High/Medium/Low/Info findings.</p>
+        </div>
         <p><span class="label">Review comments</span></p>
         <p class="fill"></p>
     </div>

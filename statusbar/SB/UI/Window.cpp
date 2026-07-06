@@ -79,7 +79,7 @@ namespace SB
     
     void Window::print( const std::string & s )
     {
-        ::wprintw( this->impl->_win, s.c_str() );
+        ::wprintw( this->impl->_win, "%s", s.c_str() );
     }
     
     void Window::print( const char * format, ... )
@@ -98,7 +98,7 @@ namespace SB
             ::wattrset( this->impl->_win, static_cast< int >( COLOR_PAIR( ColorPair::pairForColors( foreground, background ) ) ) );
         }
         
-        ::wprintw( this->impl->_win, s.c_str() );
+        ::wprintw( this->impl->_win, "%s", s.c_str() );
         
         if( Screen::shared().supportsColors() )
         {
