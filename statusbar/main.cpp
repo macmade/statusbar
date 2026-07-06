@@ -93,13 +93,6 @@ int main( int argc, const char * argv[] )
         (
             [ & ]
             {
-                SB::CPULoad         cpu         = SB::CPULoad::current();
-                SB::GPULoad         gpu         = SB::GPULoad::current();
-                SB::MemoryInfo      memory      = SB::MemoryInfo::current();
-                SB::BatteryInfo     battery     = SB::BatteryInfo::current();
-                SB::NetworkInfo     network     = SB::NetworkInfo::current();
-                SB::TemperatureInfo temperature = SB::TemperatureInfo::current();
-
                 std::size_t leftWidth = 29;
 
                 if( options.date() == false && options.time() == false )
@@ -123,6 +116,8 @@ int main( int argc, const char * argv[] )
 
                 if( options.cpu() )
                 {
+                    SB::CPULoad cpu = SB::CPULoad::current();
+
                     if( hasLeftData )
                     {
                         left.print( "    " );
@@ -133,64 +128,89 @@ int main( int argc, const char * argv[] )
                     hasLeftData = true;
                 }
 
-                if( options.gpu() && gpu.percent() >= 0 )
+                if( options.gpu() )
                 {
-                    if( hasLeftData )
+                    SB::GPULoad gpu = SB::GPULoad::current();
+
+                    if( gpu.percent() >= 0 )
                     {
-                        left.print( "    " );
+                        if( hasLeftData )
+                        {
+                            left.print( "    " );
+                        }
+
+                        displayGPU( options.gpuColor(), left, gpu );
+
+                        hasLeftData = true;
                     }
-
-                    displayGPU( options.gpuColor(), left, gpu );
-
-                    hasLeftData = true;
                 }
 
-                if( options.memory() && memory.total() > 0 )
+                if( options.memory() )
                 {
-                    if( hasLeftData )
+                    SB::MemoryInfo memory = SB::MemoryInfo::current();
+
+                    if( memory.total() > 0 )
                     {
-                        left.print( "    " );
+                        if( hasLeftData )
+                        {
+                            left.print( "    " );
+                        }
+
+                        displayMemory( options.memoryColor(), left, memory );
+
+                        hasLeftData = true;
                     }
-
-                    displayMemory( options.memoryColor(),left, memory );
-
-                    hasLeftData = true;
                 }
 
-                if( options.battery() && battery.isAvailable() )
+                if( options.battery() )
                 {
-                    if( hasLeftData )
+                    SB::BatteryInfo battery = SB::BatteryInfo::current();
+
+                    if( battery.isAvailable() )
                     {
-                        left.print( "    " );
+                        if( hasLeftData )
+                        {
+                            left.print( "    " );
+                        }
+
+                        displayBattery( options.batteryColor(), left, battery );
+
+                        hasLeftData = true;
                     }
-
-                    displayBattery( options.batteryColor(), left, battery );
-
-                    hasLeftData = true;
                 }
 
-                if( options.temperature() && temperature.temperature() > 0 )
+                if( options.temperature() )
                 {
-                    if( hasLeftData )
+                    SB::TemperatureInfo temperature = SB::TemperatureInfo::current();
+
+                    if( temperature.temperature() > 0 )
                     {
-                        left.print( "    " );
+                        if( hasLeftData )
+                        {
+                            left.print( "    " );
+                        }
+
+                        displayTemperature( options.temperatureColor(), left, temperature );
+
+                        hasLeftData = true;
                     }
-
-                    displayTemperature( options.temperatureColor(), left, temperature );
-
-                    hasLeftData = true;
                 }
 
-                if( options.network() && network.name().empty() == false )
+                if( options.network() )
                 {
-                    if( hasLeftData )
+                    SB::NetworkInfo network = SB::NetworkInfo::current();
+
+                    if( network.name().empty() == false )
                     {
-                        left.print( "    " );
+                        if( hasLeftData )
+                        {
+                            left.print( "    " );
+                        }
+
+                        displayNetwork( options.networkColor(), left, network );
+
+                        hasLeftData = true;
                     }
-
-                    displayNetwork( options.networkColor(), left, network );
-
-                    hasLeftData = true;
                 }
 
                 if( options.date() )

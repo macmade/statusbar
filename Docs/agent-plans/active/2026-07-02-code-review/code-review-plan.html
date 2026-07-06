@@ -526,11 +526,16 @@ va_end( ap );</code></pre>
             <li>Verify that disabling an option removes both the display and the associated work.</li>
         </ul>
         <p><span class="label">Status</span></p>
-        <p><span class="pill st-notstarted">Not started</span></p>
+        <p><span class="pill st-completed">Completed</span></p>
         <p><span class="label">Completed</span></p>
-        <p class="fill"></p>
+        <p class="fill">2026-07-06</p>
         <p><span class="label">Implementation notes</span></p>
-        <p class="fill"></p>
+        <div class="fill">
+            <p>Moved each instrument's <code>current()</code> call inside its <code>options.xxx()</code> block in the <code>onUpdate</code> closure (<code>main.cpp</code>), removing the six unconditional fetches that ran at the top of every ~1&nbsp;Hz frame. Each <code>current()</code> takes a recursive mutex and deep-copies the PIMPL, so a disabled instrument previously paid that cost every frame for a value that was never displayed; now it is never called when its option is off.</p>
+            <p>Five of the six display conditions also tested the value (<code>gpu.percent() &gt;= 0</code>, <code>memory.total() &gt; 0</code>, <code>battery.isAvailable()</code>, <code>temperature.temperature() &gt; 0</code>, <code>network.name().empty() == false</code>), which the old code expressed as <code>if( options.xxx() &amp;&amp; value-cond )</code>. These were restructured into a nested form — <code>if( options.xxx() ) { auto v = current(); if( value-cond ) { ... } }</code> — so <code>hasLeftData</code> is still set only when both the option and the value condition hold, keeping the inter-item spacing and output byte-identical. CPU has no value-condition, so it is a flat <code>if( options.cpu() )</code>. Display order is unchanged, and the date/time blocks (which don't fetch <code>current()</code>) are untouched.</p>
+            <p>The observers are already started only when their option is enabled (<code>main.cpp</code> lines ~61–66), so this now aligns 1:1: an option being off means neither <code>startObserving()</code> nor <code>current()</code> runs for that instrument. Also normalized a pre-existing missing space in the <code>displayMemory(...)</code> call within the line being rewritten.</p>
+            <p>Verified with <code>xcodebuild ... -configuration Debug build</code>: <strong>BUILD SUCCEEDED</strong>, no warnings under <code>-Werror</code>. <strong>Automated review loop:</strong> 1 round, converged. The fresh-context reviewer verified behavioral equivalence for every combination of (option on/off × value-condition true/false), byte-identical separator spacing, exactly-once <code>current()</code> per enabled instrument (never for disabled), safe local scope/lifetime, unchanged order, and no unused-variable/<code>-Wshadow</code>/regression issues. No Critical/High/Medium/Low/Info findings.</p>
+        </div>
         <p><span class="label">Review comments</span></p>
         <p class="fill"></p>
     </div>
