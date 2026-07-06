@@ -26,6 +26,7 @@
 #include "SB/UpdateQueue.hpp"
 #include <mutex>
 #include <thread>
+#include <chrono>
 #include <IOKit/IOKitLib.h>
 #include <IOKit/graphics/IOAccelClientConnect.h>
 #include <CoreFoundation/CoreFoundation.h>
@@ -63,7 +64,7 @@ namespace SB
 
         IMPL::observing = true;
 
-        SB::UpdateQueue::shared().registerUpdate( [] { IMPL::observe(); } );
+        SB::UpdateQueue::shared().registerUpdate( [] { IMPL::observe(); }, std::chrono::seconds( 1 ) );
     }
 
     GPULoad GPULoad::current()

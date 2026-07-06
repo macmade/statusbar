@@ -28,6 +28,7 @@
 #include <memory>
 #include <algorithm>
 #include <functional>
+#include <chrono>
 
 namespace SB
 {
@@ -40,7 +41,7 @@ namespace SB
             UpdateQueue( const UpdateQueue & o )      = delete;
             UpdateQueue & operator =( UpdateQueue o ) = delete;
 
-            void registerUpdate( const std::function< void() > & f );
+            void registerUpdate( const std::function< void() > & f, std::chrono::milliseconds interval );
 
         private:
 

@@ -28,6 +28,7 @@
 #include <vector>
 #include <thread>
 #include <atomic>
+#include <chrono>
 
 namespace SB
 {
@@ -40,10 +41,17 @@ namespace SB
 
             void run();
 
-            std::vector< std::function< void() > > _functions;
-            std::recursive_mutex                   _rmtx;
-            std::atomic< bool >                    _sleeping;
-            UUID                                   _sleepRegistration;
+            struct Update
+            {
+                std::function< void() >               function;
+                std::chrono::milliseconds             interval;
+                std::chrono::steady_clock::time_point lastRun;
+            };
+
+            std::vector< Update > _updates;
+            std::recursive_mutex  _rmtx;
+            std::atomic< bool >   _sleeping;
+            UUID                  _sleepRegistration;
     };
 
     UpdateQueue & UpdateQueue::shared()
@@ -70,11 +78,11 @@ namespace SB
     UpdateQueue::~UpdateQueue()
     {}
 
-    void UpdateQueue::registerUpdate( const std::function< void() > & f )
+    void UpdateQueue::registerUpdate( const std::function< void() > & f, std::chrono::milliseconds interval )
     {
         std::lock_guard< std::recursive_mutex > l( this->impl->_rmtx );
 
-        this->impl->_functions.push_back( f );
+        this->impl->_updates.push_back( { f, interval, std::chrono::steady_clock::time_point() } );
     }
 
     UpdateQueue::IMPL::IMPL():
@@ -119,11 +127,20 @@ namespace SB
                     }
 
                     std::vector< std::function< void() > > functions;
+                    std::chrono::steady_clock::time_point  now = std::chrono::steady_clock::now();
 
                     {
                         std::lock_guard< std::recursive_mutex > l( this->_rmtx );
 
-                        functions = this->_functions;
+                        for( auto & update: this->_updates )
+                        {
+                            if( now - update.lastRun >= update.interval )
+                            {
+                                update.lastRun = now;
+
+                                functions.push_back( update.function );
+                            }
+                        }
                     }
 
                     for( const auto & f: functions )

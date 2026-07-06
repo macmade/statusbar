@@ -30,6 +30,7 @@
 #include "SB/Instruments/Internal/SMC.hpp"
 #include <mutex>
 #include <thread>
+#include <chrono>
 #include <vector>
 #include <IOKit/hidsystem/IOHIDEventSystemClient.h>
 #include <IOKit/hidsystem/IOHIDServiceClient.h>
@@ -74,7 +75,7 @@ namespace SB
 
         IMPL::observing = true;
 
-        SB::UpdateQueue::shared().registerUpdate( [] { IMPL::observe(); } );
+        SB::UpdateQueue::shared().registerUpdate( [] { IMPL::observe(); }, std::chrono::seconds( 5 ) );
     }
 
     TemperatureInfo TemperatureInfo::current()

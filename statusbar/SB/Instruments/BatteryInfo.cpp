@@ -26,6 +26,7 @@
 #include "SB/UpdateQueue.hpp"
 #include <mutex>
 #include <thread>
+#include <chrono>
 #include <CoreFoundation/CoreFoundation.h>
 #include <IOKit/ps/IOPowerSources.h>
 
@@ -64,7 +65,7 @@ namespace SB
 
         IMPL::observing = true;
 
-        SB::UpdateQueue::shared().registerUpdate( [] { IMPL::observe(); } );
+        SB::UpdateQueue::shared().registerUpdate( [] { IMPL::observe(); }, std::chrono::seconds( 10 ) );
     }
 
     BatteryInfo BatteryInfo::current()

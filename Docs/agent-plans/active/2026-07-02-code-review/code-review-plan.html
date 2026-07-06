@@ -492,13 +492,21 @@ va_end( ap );</code></pre>
             <li>Verify each metric still updates visibly and at a sensible rate; measure overall wakeups/energy before and after.</li>
         </ul>
         <p><span class="label">Status</span></p>
-        <p><span class="pill st-notstarted">Not started</span></p>
+        <p><span class="pill st-completed">Completed</span></p>
         <p><span class="label">Completed</span></p>
-        <p class="fill"></p>
+        <p class="fill">2026-07-06</p>
         <p><span class="label">Implementation notes</span></p>
-        <p class="fill"></p>
+        <div class="fill">
+            <p>Gave each queue-driven observer its own interval instead of the single shared 1&nbsp;s tick. <code>UpdateQueue::registerUpdate</code> now takes a <code>std::chrono::milliseconds interval</code> (header + cpp, <code>&lt;chrono&gt;</code> added). <code>UpdateQueue::IMPL</code> stores <code>std::vector&lt; Update &gt;</code> where <code>struct Update { std::function&lt; void() &gt; function; std::chrono::milliseconds interval; std::chrono::steady_clock::time_point lastRun; }</code>, replacing the old <code>_functions</code> vector. In <code>IMPL::run()</code>, each iteration takes <code>now = steady_clock::now()</code> and, under the existing recursive-mutex lock, collects the observers whose <code>now - lastRun &gt;= interval</code> (snapping their <code>lastRun</code> to <code>now</code>); the collected callbacks are then invoked outside the lock, as before. <code>lastRun</code> starts at the clock epoch so every observer fires on the first tick (no startup delay).</p>
+            <p><strong>Per-instrument cadences (from the plan's ranges):</strong> GPU 1&nbsp;s, memory 1&nbsp;s (set equal to GPU at the maintainer's request), network 5&nbsp;s, temperature 5&nbsp;s, battery 10&nbsp;s. Each instrument's <code>registerUpdate</code> call passes <code>std::chrono::seconds( N )</code> (implicitly widened to milliseconds) and gained <code>#include &lt;chrono&gt;</code>. CPU is unaffected (its own dedicated thread, not the queue). This satisfies both the cadence part of finding #5 and finding #8 — temperature (which reads both the HID and SMC sensor sets) now polls at 5&nbsp;s, multiplying the M8 SMC savings.</p>
+            <p><strong>Deliberately not changed:</strong> the UpdateQueue thread still <em>wakes</em> at the 1&nbsp;s base tick and only <em>runs</em> due observers — reducing sampling work now, with wakeup coalescing left to Phase&nbsp;4 (M15) as the plan directs. The render-loop cadence is untouched. Because <code>lastRun</code> re-anchors to <code>now</code> each run there is a bounded ~1-tick jitter but no unbounded drift, no starvation, and no double-runs.</p>
+            <p><strong>Energy measurement (pending):</strong> the plan asks to verify each metric still updates at a sensible rate and to measure overall wakeups/energy before/after. That needs the widget running interactively (and <code>powermetrics</code> needs elevated privileges), so it was <em>not</em> captured here — it needs a hands-on check by the maintainer, who should also confirm the chosen cadences feel right.</p>
+            <p>Verified with <code>xcodebuild ... -configuration Debug build</code>: <strong>BUILD SUCCEEDED</strong>, no warnings under <code>-Werror</code>. <strong>Automated review loop:</strong> 1 round, converged. The fresh-context reviewer confirmed the mixed-duration comparison is warning-clean (lossless <code>ms→ns</code> widening), correct first-run/no-UB, bounded jitter with no starvation/drift/double-runs, all <code>_updates</code> access locked with no iterator invalidation (callbacks invoked outside the lock; recursive mutex tolerates a callback that re-registers), no regression (each instrument still registered exactly once), and clean style/no <code>_functions</code> leftovers. No Critical/High/Medium/Low findings; one Info note that <code>struct Update</code>/members sit in <code>IMPL</code>'s pre-existing all-<code>public</code> section (consistent with the file, not introduced here).</p>
+        </div>
         <p><span class="label">Review comments</span></p>
-        <p class="fill"></p>
+        <div class="fill">
+            <p>Maintainer: memory should use the same interval as GPU (1&nbsp;s), not 2&nbsp;s.</p>
+        </div>
     </div>
 
     <!-- M11 -->

@@ -26,6 +26,7 @@
 #include "SB/UpdateQueue.hpp"
 #include <mutex>
 #include <thread>
+#include <chrono>
 #include <sys/sysctl.h>
 #include <mach/host_info.h>
 #include <mach/mach_host.h>
@@ -71,7 +72,7 @@ namespace SB
 
         IMPL::observing = true;
 
-        SB::UpdateQueue::shared().registerUpdate( [] { IMPL::observe(); } );
+        SB::UpdateQueue::shared().registerUpdate( [] { IMPL::observe(); }, std::chrono::seconds( 1 ) );
     }
 
     MemoryInfo MemoryInfo::current()

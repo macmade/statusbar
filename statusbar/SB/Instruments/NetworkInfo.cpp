@@ -26,6 +26,7 @@
 #include "SB/UpdateQueue.hpp"
 #include <mutex>
 #include <thread>
+#include <chrono>
 #include <ifaddrs.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -65,7 +66,7 @@ namespace SB
 
         IMPL::observing = true;
 
-        SB::UpdateQueue::shared().registerUpdate( [] { IMPL::observe(); } );
+        SB::UpdateQueue::shared().registerUpdate( [] { IMPL::observe(); }, std::chrono::seconds( 5 ) );
     }
 
     NetworkInfo NetworkInfo::current()
