@@ -169,7 +169,7 @@ namespace SB
 
         while( interface != nullptr )
         {
-            if( interface->ifa_addr->sa_family == AF_INET )
+            if( interface->ifa_addr != nullptr && interface->ifa_addr->sa_family == AF_INET )
             {
                 std::string          name    = interface->ifa_name;
                 struct sockaddr_in * in      = reinterpret_cast< struct sockaddr_in * >( interface->ifa_addr );

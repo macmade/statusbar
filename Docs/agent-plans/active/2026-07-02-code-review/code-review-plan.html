@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>statusbar — Code Review Implementation Plan</title>
+<style>
+    :root {
+        --bg:        #0f1115;
+        --bg-alt:    #171a21;
+        --bg-card:   #1c2029;
+        --border:    #2a2f3a;
+        --text:      #d7dce3;
+        --text-dim:  #9aa4b2;
+        --text-fade: #6b7480;
+        --accent:    #6ea8fe;
+        --mono:      ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    }
+    * { box-sizing: border-box; }
+    body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        line-height: 1.6;
+        font-size: 16px;
+    }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 48px 24px 96px; }
+    h1 { font-size: 30px; font-weight: 700; margin: 0 0 4px; letter-spacing: -0.02em; }
+    h2 {
+        font-size: 21px; font-weight: 650; margin: 48px 0 16px;
+        padding-bottom: 8px; border-bottom: 1px solid var(--border);
+        letter-spacing: -0.01em;
+    }
+    h3.phase {
+        font-size: 17px; font-weight: 650; margin: 36px 0 4px; color: var(--accent);
+        letter-spacing: -0.01em;
+    }
+    h4 { font-size: 16px; margin: 0; }
+    p { margin: 0 0 14px; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code {
+        font-family: var(--mono); font-size: 0.88em;
+        background: var(--bg-alt); padding: 1px 6px; border-radius: 4px;
+        border: 1px solid var(--border); color: #e6c07b;
+    }
+    .meta { color: var(--text-dim); font-size: 14px; margin-bottom: 2px; }
+    .meta strong { color: var(--text); font-weight: 600; }
+    .lead { color: var(--text-dim); }
+
+    /* status capsules */
+    .pill {
+        display: inline-block; font-size: 11px; font-weight: 700;
+        letter-spacing: 0.05em; text-transform: uppercase;
+        padding: 3px 10px; border-radius: 999px; color: #0f1115;
+        vertical-align: middle;
+    }
+    .st-notstarted { background: #9aa4b2; }
+    .st-inprogress { background: #ffd45c; }
+    .st-completed  { background: #7ee787; }
+
+    /* severity tags */
+    .sev { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 0.04em;
+           padding: 2px 8px; border-radius: 6px; color: #0f1115; vertical-align: middle; }
+    .sev-high     { background: #ff9f43; }
+    .sev-medium   { background: #ffd45c; }
+    .sev-low      { background: #6ea8fe; }
+    .sev-info     { background: #9aa4b2; }
+    .energy-badge {
+        display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 0.04em;
+        color: #7ee787; border: 1px solid #2ea04366; background: #2ea04322;
+        border-radius: 6px; padding: 2px 8px; margin-left: 4px; vertical-align: middle;
+    }
+
+    /* milestone cards */
+    .ms {
+        background: var(--bg-card); border: 1px solid var(--border);
+        border-radius: 12px; padding: 20px 22px; margin: 16px 0;
+    }
+    .ms-head {
+        display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+        margin-bottom: 6px;
+    }
+    .ms-head .id { color: var(--text-fade); font-family: var(--mono); font-size: 13px; }
+    .ms-head h4 { flex: 1 1 55%; }
+    .label { color: var(--text-fade); font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; margin: 16px 0 4px; }
+    .loc { font-family: var(--mono); font-size: 12.5px; color: #e6c07b; }
+    ul { margin: 4px 0 14px; padding-left: 22px; }
+    li { margin-bottom: 6px; }
+    ul.tasks { list-style: none; padding-left: 4px; }
+    ul.tasks li { position: relative; padding-left: 26px; }
+    ul.tasks li::before {
+        content: "☐"; position: absolute; left: 0; top: 0;
+        color: var(--text-fade); font-size: 15px;
+    }
+    pre {
+        background: #0b0d11; border: 1px solid var(--border); border-radius: 8px;
+        padding: 14px 16px; overflow-x: auto; font-family: var(--mono);
+        font-size: 13px; line-height: 1.5; color: var(--text);
+    }
+    pre code { background: none; border: none; padding: 0; color: inherit; }
+    .fill {
+        border-left: 3px solid var(--border); padding-left: 14px; margin-top: 6px;
+        color: var(--text-dim); font-style: italic; min-height: 8px;
+    }
+    hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
+    .footnote { color: var(--text-fade); font-size: 13px; }
+    .qa { background: var(--bg-alt); border: 1px solid var(--border); border-radius: 10px; padding: 4px 18px; margin: 14px 0; }
+    .qa .q { font-weight: 600; margin-top: 12px; margin-bottom: 4px; }
+    .qa .a { color: var(--text-dim); margin-bottom: 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+    <h1>statusbar — Code Review Implementation Plan</h1>
+    <p class="meta"><strong>Generated:</strong> 2026-07-06</p>
+    <p class="meta"><strong>Source:</strong> <code>Docs/agent-plans/active/2026-07-02-code-review/code-review.html</code></p>
+    <p class="meta"><strong>Build/verify:</strong> Xcode project <code>statusbar.xcodeproj</code>, scheme <code>statusbar</code> (prefer <code>xcodebuild</code> over <code>swift build</code>).</p>
+
+    <h2>Overview</h2>
+    <p>
+        This plan turns the whole-repository code review into a sequenced, milestone-based work list. It covers all
+        17 findings (1 High, 6 Medium, 7 Low, 3 Info). The ordering is <strong>by risk, then theme</strong>: correctness
+        and stability fixes come first because they are safe, self-contained, and high-value; the low-risk energy wins
+        follow; then performance polish; then the larger architectural energy redesign as its own phase; and finally
+        housekeeping and documentation. Each finding maps to exactly one milestone so it can be reviewed and committed
+        on its own.
+    </p>
+    <p>
+        Every milestone is small enough to land as a single commit and carries its own live status, implementation
+        notes, and review-comments fields, updated in place as work proceeds. Where a change touches an always-on
+        1&nbsp;Hz hot path, the plan asks for a <code>powermetrics</code>/Instruments before-and-after measurement so the
+        energy effect is verified, not assumed.
+    </p>
+
+    <h2>Questions &amp; answers</h2>
+    <div class="qa">
+        <p class="q">Which findings should the plan cover?</p>
+        <p class="a">All 17 findings, including the three Info items (#15 deprecated constant, #16 per-tick heap churn, #17 no teardown of detached threads/singletons).</p>
+        <p class="q">How far should the plan go on finding #5 (three unsynchronized ~1&nbsp;Hz wake loops)?</p>
+        <p class="a">Do the low-risk per-instrument cadence changes now as an early energy milestone, and keep the single-timer coalescing plus event-driven notifications (<code>IOPSNotificationCreateRunLoopSource</code>, <code>SCNetworkReachability</code>) as a clearly-separated later phase.</p>
+        <p class="q">How should milestones be ordered / grouped?</p>
+        <p class="a">By risk, then theme: correctness/UB/stability first, then energy wins, then performance polish, then the energy redesign, then Info/housekeeping — grouped into named phases.</p>
+    </div>
+
+    <h2>Notes</h2>
+    <ul>
+        <li><strong>Do not undo prior energy work.</strong> The interval bump to 1&nbsp;s (<code>d413715</code>), the SMC key-read reduction (<code>209e318</code>), and the sleep/wake gating (<code>c9ec26d</code>) are the right direction; these milestones build on them.</li>
+        <li><strong>Runtime model.</strong> <code>main</code> starts the enabled observers, then <code>Screen::start(1000)</code> drives an ncurses render loop at ~1&nbsp;Hz. Observers run on two other threads — a dedicated <code>CPULoad</code> sampling thread and the shared <code>UpdateQueue</code> thread (GPU, memory, battery, temperature, network). A fourth thread runs the <code>SleepManager</code> run loop.</li>
+        <li><strong>Verification.</strong> After each milestone: build the <code>statusbar</code> scheme with <code>xcodebuild</code>, run the widget, and confirm the affected display still renders correctly. For energy milestones (#2, #3, #5, #8), capture a <code>powermetrics</code>/Instruments sample before and after and record the delta in the milestone's implementation notes.</li>
+        <li><strong>Commit granularity.</strong> One milestone = one commit. The user commits; do not commit or push automatically.</li>
+        <li><strong>Coding conventions.</strong> Follow the existing house style (PIMPL, one type per file, early returns, aligned assignments, no throwing from public methods, prefer <code>const</code>). Keep changes localized to the finding at hand — no unrelated refactors.</li>
+        <li><strong>Convergence between phases.</strong> Milestone&nbsp;10 (cadence) and Milestone&nbsp;13 (blocking <code>poll()</code>) both touch the loop timing that Phase&nbsp;4 will restructure. Land them first; Phase&nbsp;4 then subsumes them into a single coalesced timer.</li>
+    </ul>
+
+    <!-- ============================================================ -->
+    <h2>Phase 1 — Correctness &amp; stability</h2>
+    <p class="lead">Safe, self-contained fixes for the crash risk, the resource leak, the data races, and the undefined-behaviour defects. High value, low blast radius — land these first.</p>
+
+    <!-- M1 -->
+    <div class="ms">
+        <div class="ms-head">
+            <span class="id">M1</span>
+            <h4>Guard the null <code>ifa_addr</code> dereference in the network poll</h4>
+            <span class="sev sev-high">High</span>
+        </div>
+        <div class="tags"><span class="loc">statusbar/SB/Instruments/NetworkInfo.cpp:172</span> — review #1</div>
+        <p><span class="label">Goal</span></p>
+        <p>Eliminate the recurring crash exposure: <code>getifaddrs()</code> can return entries whose <code>ifa_addr</code> is <code>NULL</code> (tunnel/utun, point-to-point), and network display is on by default, so the poll can crash once per second.</p>
+        <p><span class="label">Tasks</span></p>
+        <ul class="tasks">
+            <li>Add a null check before dereferencing: <code>if( interface-&gt;ifa_addr != nullptr &amp;&amp; interface-&gt;ifa_addr-&gt;sa_family == AF_INET )</code>.</li>
+            <li>Audit the full <code>getNetworkInfo()</code> loop for any other <code>ifa_addr</code>/<code>ifa_netmask</code>/<code>ifa_data</code> dereferences that assume non-null, and guard them consistently.</li>
+            <li>Confirm the iterator advances correctly for skipped entries (no infinite loop, no dropped interfaces).</li>
+            <li>Build and run with network display enabled; verify no crash and that addresses still display.</li>
+        </ul>
+        <p><span class="label">Status</span></p>
+        <p><span class="pill st-completed">Completed</span></p>
+        <p><span class="label">Completed</span></p>
+        <p class="fill">2026-07-06</p>
+        <p><span class="label">Implementation notes</span></p>
+        <div class="fill">
+            <p>Added a null guard to the interface loop in <code>getNetworkInfo()</code>: the condition is now <code>if( interface-&gt;ifa_addr != nullptr &amp;&amp; interface-&gt;ifa_addr-&gt;sa_family == AF_INET )</code> (<code>NetworkInfo.cpp:172</code>). The <code>&amp;&amp;</code> short-circuits so <code>-&gt;sa_family</code> is never read on a NULL <code>ifa_addr</code> (utun/tunnel, point-to-point interfaces), removing the ~1&nbsp;Hz crash path.</p>
+            <p>Audit of the rest of the loop: the only other <code>ifa_addr</code> uses (the <code>reinterpret_cast</code> at :175 and <code>in-&gt;sin_addr</code> at :176) are already inside the guarded <code>AF_INET</code> branch, so they are transitively protected. There are no <code>ifa_netmask</code>/<code>ifa_data</code> accesses in this function. The iterator advance <code>interface = interface-&gt;ifa_next</code> runs unconditionally at the end of every iteration, so skipped NULL entries still advance correctly — no infinite loop and no dropped interfaces. Used <code>!= nullptr</code> to match the existing idiom in the file.</p>
+            <p>Verified with <code>xcodebuild -project statusbar.xcodeproj -scheme statusbar -configuration Debug build</code>: <strong>BUILD SUCCEEDED</strong> under the project's <code>-Werror</code> + strict warning set. (A pre-existing static-analyzer note in <code>Screen.cpp</code> is unrelated to this change.)</p>
+            <p><strong>Automated review loop:</strong> 1 round, converged. The fresh-context reviewer reported no Critical/High/Medium findings and confirmed all three milestone requirements (null check, full-loop audit, correct iterator advance). One <em>Info</em> item, pre-existing and out of scope: <code>std::string name = interface-&gt;ifa_name</code> (:174) would be UB if <code>ifa_name</code> were NULL, but <code>getifaddrs()</code> always populates it — no change made.</p>
+        </div>
+        <p><span class="label">Review comments</span></p>
+        <p class="fill"></p>
+    </div>
+
+    <!-- M2 -->
+    <div class="ms">
+        <div class="ms-head">
+            <span class="id">M2</span>
+            <h4>Fix the <code>mach_host_self()</code> port-right leak</h4>
+            <span class="sev sev-medium">Medium</span>
+        </div>
+        <div class="tags"><span class="loc">statusbar/SB/Instruments/CPULoad.cpp:251</span> <span class="loc">statusbar/SB/Instruments/MemoryInfo.cpp:244</span> — review #4</div>
+        <p><span class="label">Goal</span></p>
+        <p>Stop leaking a host-port send right twice per second. Unlike <code>mach_task_self()</code>, the right returned by <code>mach_host_self()</code> is owned by the caller and must be balanced.</p>
+        <p><span class="label">Tasks</span></p>
+        <ul class="tasks">
+            <li>Cache the host port once per file (<code>static const mach_port_t host = mach_host_self();</code>) <em>or</em> deallocate after each use with <code>mach_port_deallocate( mach_task_self(), host )</code>.</li>
+            <li>Apply the same fix in both <code>getCPULoadInfo()</code> and <code>getMemoryInfo()</code>; keep the approach identical in both for consistency.</li>
+            <li>Confirm no other call site takes an unbalanced <code>mach_host_self()</code> right.</li>
+            <li>Sanity-check port count over time (e.g. observe Mach port count does not grow while running).</li>
+        </ul>
+        <p><span class="label">Status</span></p>
+        <p><span class="pill st-notstarted">Not started</span></p>
+        <p><span class="label">Completed</span></p>
+        <p class="fill"></p>
+        <p><span class="label">Implementation notes</span></p>
+        <p class="fill"></p>
+        <p><span class="label">Review comments</span></p>
+        <p class="fill"></p>
+    </div>
+
+    <!-- M3 -->
+    <div class="ms">
+        <div class="ms-head">
+            <span class="id">M3</span>
+            <h4>Fix the <code>va_list</code> reuse in <code>String::format()</code></h4>
+            <span class="sev sev-medium">Medium</span>
+        </div>
+        <div class="tags"><span class="loc">statusbar/SB/Helpers/String.cpp:40–48</span> — review #6</div>
+        <p><span class="label">Goal</span></p>
+        <p>Remove undefined behaviour: the same <code>va_list</code> is used for the sizing <code>vsnprintf</code> and the real one. This runs every second via <code>bytesToHumanReadable()</code> and <code>fourCC()</code>.</p>
+        <p><span class="label">Tasks</span></p>
+        <ul class="tasks">
+            <li>Use <code>va_copy</code> for the sizing pass; keep the original <code>ap</code> for the formatting call:</li>
+        </ul>
+        <pre><code>va_list ap, ap2;
+va_start( ap, format );
+va_copy( ap2, ap );
+int size = vsnprintf( nullptr, 0, format, ap2 );
+va_end( ap2 );
+/* ... allocate ... */
+vsnprintf( cp, static_cast&lt;size_t&gt;( size + 1 ), format, ap );
+va_end( ap );</code></pre>
+        <ul class="tasks">
+            <li>Ensure <code>va_end</code> is called on both lists on every path, including the early-out when <code>size &lt;= 0</code>.</li>
+            <li>Build and verify memory sizes and SMC key names still format correctly.</li>
+        </ul>
+        <p><span class="label">Status</span></p>
+        <p><span class="pill st-notstarted">Not started</span></p>
+        <p><span class="label">Completed</span></p>
+        <p class="fill"></p>
+        <p><span class="label">Implementation notes</span></p>
+        <p class="fill"></p>
+        <p><span class="label">Review comments</span></p>
+        <p class="fill"></p>
+    </div>
+
+    <!-- M4 -->
+    <div class="ms">
+        <div class="ms-head">
+            <span class="id">M4</span>
+            <h4>Fix the <code>vm_deallocate</code> element size in the CPU load path</h4>
+            <span class="sev sev-medium">Medium</span>
+        </div>
+        <div class="tags"><span class="loc">statusbar/SB/Instruments/CPULoad.cpp:276</span> — review #7</div>
+        <p><span class="label">Goal</span></p>
+        <p>Deallocate exactly the region <code>host_processor_info()</code> mapped. The current size uses <code>sizeof(processor_info_array_t)</code> (a pointer, 8&nbsp;bytes) instead of <code>sizeof(integer_t)</code> (4&nbsp;bytes), requesting a 2× region — latent UB on high-core-count machines.</p>
+        <p><span class="label">Tasks</span></p>
+        <ul class="tasks">
+            <li>Change the size to <code>cpuLoadInfoCount * sizeof( integer_t )</code>.</li>
+            <li>Confirm <code>cpuLoadInfoCount</code> is the element count returned by <code>host_processor_info()</code> (not a byte count) so the multiplication is correct.</li>
+            <li>Build and run; verify CPU load still updates and no deallocation fault occurs.</li>
+        </ul>
+        <p><span class="label">Status</span></p>
+        <p><span class="pill st-notstarted">Not started</span></p>
+        <p><span class="label">Completed</span></p>
+        <p class="fill"></p>
+        <p><span class="label">Implementation notes</span></p>
+        <p class="fill"></p>
+        <p><span class="label">Review comments</span></p>
+        <p class="fill"></p>
+    </div>
+
+    <!-- M5 -->
+    <div class="ms">
+        <div class="ms-head">
+            <span class="id">M5</span>
+            <h4>Make the sleep/running flags <code>std::atomic&lt;bool&gt;</code></h4>
+            <span class="sev sev-low">Low</span>
+        </div>
+        <div class="tags"><span class="loc">statusbar/SB/UI/Screen.cpp:191, 249</span> <span class="loc">statusbar/SB/UpdateQueue.cpp:115</span> <span class="loc">statusbar/SB/Instruments/CPULoad.cpp:196</span> — review #11</div>
+        <p><span class="label">Goal</span></p>
+        <p>Remove the data races: <code>_sleeping</code>/<code>sleeping</code> and <code>_running</code> are written under a mutex but read without it in loop/sleep conditions — UB under the C++ memory model.</p>
+        <p><span class="label">Tasks</span></p>
+        <ul class="tasks">
+            <li>Change these flags to <code>std::atomic&lt;bool&gt;</code> in <code>Screen</code>, <code>UpdateQueue</code>, and <code>CPULoad</code>.</li>
+            <li>Remove now-redundant locking that existed solely to guard these single-bool reads/writes, but keep locks that guard other shared state.</li>
+            <li>Verify start/stop and sleep/wake transitions still behave correctly (loops pause on sleep, resume on wake, exit cleanly on stop).</li>
+        </ul>
+        <p><span class="label">Status</span></p>
+        <p><span class="pill st-notstarted">Not started</span></p>
+        <p><span class="label">Completed</span></p>
+        <p class="fill"></p>
+        <p><span class="label">Implementation notes</span></p>
+        <p class="fill"></p>
+        <p><span class="label">Review comments</span></p>
+        <p class="fill"></p>
+    </div>
+
+    <!-- M6 -->
+    <div class="ms">
+        <div class="ms-head">
+            <span class="id">M6</span>
+            <h4>Replace strict-aliasing type-pun in SMC float decode</h4>
+            <span class="sev sev-low">Low</span>
+        </div>
+        <div class="tags"><span class="loc">statusbar/SB/Instruments/Internal/SMC.cpp:273</span> — review #13</div>
+        <p><span class="label">Goal</span></p>
+        <p>Remove the <code>reinterpret_cast&lt;float*&gt;</code> of a <code>uint32_t*</code> in <code>readFloat32()</code>, which violates strict aliasing.</p>
+        <p><span class="label">Tasks</span></p>
+        <ul class="tasks">
+            <li>Copy the bits instead: <code>float f; std::memcpy( &amp;f, &amp;u32, sizeof( f ) );</code> (or <code>std::bit_cast</code> if the language standard in the project settings is C++20+).</li>
+            <li>Confirm the deployment C++ standard before choosing <code>bit_cast</code> vs <code>memcpy</code>.</li>
+            <li>Verify decoded temperature values are unchanged.</li>
+        </ul>
+        <p><span class="label">Status</span></p>
+        <p><span class="pill st-notstarted">Not started</span></p>
+        <p><span class="label">Completed</span></p>
+        <p class="fill"></p>
+        <p><span class="label">Implementation notes</span></p>
+        <p class="fill"></p>
+        <p><span class="label">Review comments</span></p>
+        <p class="fill"></p>
+    </div>
+
+    <!-- M7 -->
+    <div class="ms">
+        <div class="ms-head">
+            <span class="id">M7</span>
+            <h4>Harden runtime strings passed as printf format strings</h4>
+            <span class="sev sev-low">Low</span>
+        </div>
+        <div class="tags"><span class="loc">statusbar/SB/UI/Window.cpp:82</span> <span class="loc">statusbar/SB/UI/Screen.cpp:151</span> — review #12</div>
+        <p><span class="label">Goal</span></p>
+        <p>Stop interpreting arbitrary strings as format strings. Latent today (all callers pass safe text), but any future string containing <code>%</code> (a network name, a path) would read garbage varargs or crash.</p>
+        <p><span class="label">Tasks</span></p>
+        <ul class="tasks">
+            <li>Change <code>::wprintw( win, s.c_str() )</code> to <code>::wprintw( win, "%s", s.c_str() )</code> in <code>Window::print</code>.</li>
+            <li>Change <code>::printw( s.c_str() )</code> to <code>::printw( "%s", s.c_str() )</code> in <code>Screen::print</code>.</li>
+            <li>Grep for any other <code>printw</code>/<code>wprintw</code>/<code>mvprintw</code> call sites that forward a runtime string directly and fix them too.</li>
+            <li>Verify output rendering is unchanged.</li>
+        </ul>
+        <p><span class="label">Status</span></p>
+        <p><span class="pill st-notstarted">Not started</span></p>
+        <p><span class="label">Completed</span></p>
+        <p class="fill"></p>
+        <p><span class="label">Implementation notes</span></p>
+        <p class="fill"></p>
+        <p><span class="label">Review comments</span></p>
+        <p class="fill"></p>
+    </div>
+
+    <!-- ============================================================ -->
+    <h2>Phase 2 — Energy wins (low-risk)</h2>
+    <p class="lead">Concrete, localized reductions in per-second kernel work and wakeups, without restructuring the threading model. These deliver most of the battery benefit at low risk.</p>
+
+    <!-- M8 -->
+    <div class="ms">
+        <div class="ms-head">
+            <span class="id">M8</span>
+            <h4>Batch SMC open/close around a read batch <span class="energy-badge">ENERGY</span></h4>
+            <span class="sev sev-medium">Medium</span>
+        </div>
+        <div class="tags"><span class="loc">statusbar/SB/Instruments/Internal/SMC.cpp:49–58</span> — review #2</div>
+        <p><span class="label">Goal</span></p>
+        <p>Turn <code>3 × N</code> IOKit round trips per temperature poll into <code>N + 2</code> by hoisting <code>kSMCUserClientOpen</code>/<code>kSMCUserClientClose</code> out of the per-key path. The connection is already opened once at init via <code>IOServiceOpen</code>.</p>
+        <p><span class="label">Tasks</span></p>
+        <ul class="tasks">
+            <li>Add batch enter/leave semantics: one <code>kSMCUserClientOpen</code> before a batch of key reads and one <code>kSMCUserClientClose</code> after (or open once for the process lifetime — decide based on how the SMC client is expected to be shared).</li>
+            <li>Refactor <code>callSMCFunction()</code> / <code>readSMCSensors()</code> so per-key reads no longer open/close individually.</li>
+            <li>Ensure the first-poll full-keyspace enumeration also runs inside a single open/close.</li>
+            <li>Preserve existing error handling and result-code validation; make sure the client is closed on every error path.</li>
+            <li>Measure temperature-poll cost with <code>powermetrics</code>/Instruments before and after; record the delta.</li>
+        </ul>
+        <p><span class="label">Status</span></p>
+        <p><span class="pill st-notstarted">Not started</span></p>
+        <p><span class="label">Completed</span></p>
+        <p class="fill"></p>
+        <p><span class="label">Implementation notes</span></p>
+        <p class="fill"></p>
+        <p><span class="label">Review comments</span></p>
+        <p class="fill"></p>
+    </div>
+
+    <!-- M9 -->
+    <div class="ms">
+        <div class="ms-head">
+            <span class="id">M9</span>
+            <h4>Fetch only the needed GPU property instead of the full dictionary <span class="energy-badge">ENERGY</span></h4>
+            <span class="sev sev-medium">Medium</span>
+        </div>
+        <div class="tags"><span class="loc">statusbar/SB/Instruments/GPULoad.cpp:169</span> — review #3</div>
+        <p><span class="label">Goal</span></p>
+        <p>Stop materializing the entire IOAccelerator property dictionary once per second just to read three numbers from <code>PerformanceStatistics</code>.</p>
+        <p><span class="label">Tasks</span></p>
+        <ul class="tasks">
+            <li>Replace <code>IORegistryEntryCreateCFProperties()</code> with <code>IORegistryEntrySearchCFProperty()</code> for the <code>PerformanceStatistics</code> key (use <code>kIORegistryIterateRecursively</code> if the key is nested).</li>
+            <li>Keep the existing CF type-ID validation and <code>CFRelease</code> discipline across all early-return branches.</li>
+            <li>Verify GPU utilization values match the previous implementation on the same hardware.</li>
+            <li>Measure GPU-poll cost before and after; record the delta.</li>
+        </ul>
+        <p><span class="label">Status</span></p>
+        <p><span class="pill st-notstarted">Not started</span></p>
+        <p><span class="label">Completed</span></p>
+        <p class="fill"></p>
+        <p><span class="label">Implementation notes</span></p>
+        <p class="fill"></p>
+        <p><span class="label">Review comments</span></p>
+        <p class="fill"></p>
+    </div>
+
+    <!-- M10 -->
+    <div class="ms">
+        <div class="ms-head">
+            <span class="id">M10</span>
+            <h4>Give slow instruments their own longer cadence <span class="energy-badge">ENERGY</span></h4>
+            <span class="sev sev-medium">Medium</span>
+        </div>
+        <div class="tags"><span class="loc">statusbar/SB/UpdateQueue.cpp:107–140</span> <span class="loc">statusbar/SB/Instruments/TemperatureInfo.cpp:166–199</span> — review #5 (cadence portion) &amp; #8</div>
+        <p><span class="label">Goal</span></p>
+        <p>Cut redundant work by sampling slowly-varying metrics less often than 1&nbsp;Hz — the low-risk part of finding #5, plus the temperature-specific #8. This precedes, and is later subsumed by, the Phase&nbsp;4 redesign.</p>
+        <p><span class="label">Tasks</span></p>
+        <ul class="tasks">
+            <li>Introduce a per-instrument interval instead of a single shared 1&nbsp;s tick in <code>UpdateQueue</code>. Suggested starting points: CPU/GPU 1–2&nbsp;s, memory ~2&nbsp;s, temperature/battery/network 5–10&nbsp;s.</li>
+            <li>Ensure the <code>UpdateQueue</code> thread only runs each observer when its interval has elapsed (track last-run time per observer), still gated by the sleep flag.</li>
+            <li>Confirm temperature (which reads both HID and SMC sets, #8) now runs at the longer interval, multiplying the M8 savings.</li>
+            <li>Keep the render loop cadence as-is for now (Phase 4 restructures timers globally).</li>
+            <li>Verify each metric still updates visibly and at a sensible rate; measure overall wakeups/energy before and after.</li>
+        </ul>
+        <p><span class="label">Status</span></p>
+        <p><span class="pill st-notstarted">Not started</span></p>
+        <p><span class="label">Completed</span></p>
+        <p class="fill"></p>
+        <p><span class="label">Implementation notes</span></p>
+        <p class="fill"></p>
+        <p><span class="label">Review comments</span></p>
+        <p class="fill"></p>
+    </div>
+
+    <!-- M11 -->
+    <div class="ms">
+        <div class="ms-head">
+            <span class="id">M11</span>
+            <h4>Guard each <code>current()</code> behind its enabled option</h4>
+            <span class="sev sev-low">Low</span>
+        </div>
+        <div class="tags"><span class="loc">statusbar/main.cpp:96–101</span> — review #9</div>
+        <p><span class="label">Goal</span></p>
+        <p>Stop constructing and deep-copying every instrument each frame when only a subset is displayed; each <code>current()</code> takes a recursive mutex and clones the PIMPL.</p>
+        <p><span class="label">Tasks</span></p>
+        <ul class="tasks">
+            <li>Wrap each <code>CPULoad::current()</code>, <code>GPULoad::current()</code>, <code>MemoryInfo::current()</code>, <code>BatteryInfo::current()</code>, <code>NetworkInfo::current()</code>, <code>TemperatureInfo::current()</code> in its corresponding <code>options.xxx()</code> check within the <code>onUpdate</code> closure.</li>
+            <li>Confirm the corresponding observers are also only <em>started</em> when their option is enabled (avoid running an observer whose value is never read); if not already the case, align this with the option flags.</li>
+            <li>Verify that disabling an option removes both the display and the associated work.</li>
+        </ul>
+        <p><span class="label">Status</span></p>
+        <p><span class="pill st-notstarted">Not started</span></p>
+        <p><span class="label">Completed</span></p>
+        <p class="fill"></p>
+        <p><span class="label">Implementation notes</span></p>
+        <p class="fill"></p>
+        <p><span class="label">Review comments</span></p>
+        <p class="fill"></p>
+    </div>
+
+    <!-- ============================================================ -->
+    <h2>Phase 3 — Performance polish</h2>
+    <p class="lead">Smaller hot-path improvements that reduce per-second CPU work and remove redundant locking. Independent of the threading redesign.</p>
+
+    <!-- M12 -->
+    <div class="ms">
+        <div class="ms-head">
+            <span class="id">M12</span>
+            <h4>Make <code>ColorPair</code> lookup O(1) and drop hot-path locking</h4>
+            <span class="sev sev-low">Low</span>
+        </div>
+        <div class="tags"><span class="loc">statusbar/SB/UI/ColorPair.cpp:44–57</span> <span class="loc">statusbar/SB/UI/Window.cpp:96–106</span> — review #10</div>
+        <p><span class="label">Goal</span></p>
+        <p>Replace the twice-per-print linear scan of the 81-entry pair vector with a direct index derived from the two color enums, and stop calling <code>Screen::shared().supportsColors()</code> (a recursive-mutex lock) twice per print.</p>
+        <p><span class="label">Tasks</span></p>
+        <ul class="tasks">
+            <li>Derive the pair index directly from the foreground/background <code>Color</code> enum values (9×9 table), removing the linear search in <code>pairForColors</code>.</li>
+            <li>Cache or hoist the <code>supportsColors()</code> result so <code>Window::print</code> does not lock twice per print (e.g. read it once per print, or cache it after ncurses init since it does not change at runtime).</li>
+            <li>Verify colored output is byte-for-byte identical to before, including the reset-to-clear/clear path.</li>
+        </ul>
+        <p><span class="label">Status</span></p>
+        <p><span class="pill st-notstarted">Not started</span></p>
+        <p><span class="label">Completed</span></p>
+        <p class="fill"></p>
+        <p><span class="label">Implementation notes</span></p>
+        <p class="fill"></p>
+        <p><span class="label">Review comments</span></p>
+        <p class="fill"></p>
+    </div>
+
+    <!-- M13 -->
+    <div class="ms">
+        <div class="ms-head">
+            <span class="id">M13</span>
+            <h4>Block in <code>poll()</code> with the refresh interval instead of a separate sleep <span class="energy-badge">ENERGY</span></h4>
+            <span class="sev sev-low">Low</span>
+        </div>
+        <div class="tags"><span class="loc">statusbar/SB/UI/Screen.cpp:216–255</span> — review #14</div>
+        <p><span class="label">Goal</span></p>
+        <p>Improve input/resize responsiveness (currently up to ~1&nbsp;s latency) and remove one redundant wake per cycle by letting <code>poll()</code> block for the refresh interval instead of polling with a 0&nbsp;ms timeout and then sleeping.</p>
+        <p><span class="label">Tasks</span></p>
+        <ul class="tasks">
+            <li>Pass the refresh interval (in ms) as the <code>poll()</code> timeout and remove the separate <code>sleep_for(refreshInterval)</code>.</li>
+            <li>Ensure keypress handling (e.g. <code>q</code> to quit) and <code>SIGWINCH</code>/resize are still handled correctly and now react promptly.</li>
+            <li>Confirm the sleep-gating still pauses the loop when the machine sleeps (don't spin while blocked).</li>
+            <li>Note: this changes the render-loop timing that Phase 4 will fold into a single coalesced timer — keep the change minimal.</li>
+        </ul>
+        <p><span class="label">Status</span></p>
+        <p><span class="pill st-notstarted">Not started</span></p>
+        <p><span class="label">Completed</span></p>
+        <p class="fill"></p>
+        <p><span class="label">Implementation notes</span></p>
+        <p class="fill"></p>
+        <p><span class="label">Review comments</span></p>
+        <p class="fill"></p>
+    </div>
+
+    <!-- M14 -->
+    <div class="ms">
+        <div class="ms-head">
+            <span class="id">M14</span>
+            <h4>Remove per-tick heap churn in observers</h4>
+            <span class="sev sev-info">Info</span>
+        </div>
+        <div class="tags"><span class="loc">CPULoad.cpp:227–235, MemoryInfo.cpp:212–214, GPULoad.cpp:144–146, …</span> — review #16</div>
+        <p><span class="label">Goal</span></p>
+        <p>Avoid the per-cycle <code>delete</code>+<code>new</code> on the shared info object (and the deep copy in <code>current()</code>) by storing the info by value and updating fields in place under the lock.</p>
+        <p><span class="label">Tasks</span></p>
+        <ul class="tasks">
+            <li>Change each observer to hold its info object by value rather than a heap pointer, updating fields in place under the existing lock.</li>
+            <li>Adjust <code>current()</code> to return a copy of the value object (still under the lock) without a heap round-trip.</li>
+            <li>Keep the PIMPL boundary intact where it is part of the public type; this change is about the internal storage, not the public API.</li>
+            <li>Verify all instruments still report correct values and there are no lifetime regressions.</li>
+        </ul>
+        <p><span class="label">Status</span></p>
+        <p><span class="pill st-notstarted">Not started</span></p>
+        <p><span class="label">Completed</span></p>
+        <p class="fill"></p>
+        <p><span class="label">Implementation notes</span></p>
+        <p class="fill"></p>
+        <p><span class="label">Review comments</span></p>
+        <p class="fill"></p>
+    </div>
+
+    <!-- ============================================================ -->
+    <h2>Phase 4 — Energy architecture redesign</h2>
+    <p class="lead">The larger, higher-risk restructuring deferred from finding #5: coalesce the independent ~1&nbsp;Hz wake loops into a single timer and move slowly-changing sources onto event notifications. Land only after Phases 1–3 and their measurements are in.</p>
+
+    <!-- M15 -->
+    <div class="ms">
+        <div class="ms-head">
+            <span class="id">M15</span>
+            <h4>Coalesce wakeups into a single timer <span class="energy-badge">ENERGY</span></h4>
+            <span class="sev sev-medium">Medium</span>
+        </div>
+        <div class="tags"><span class="loc">statusbar/SB/UI/Screen.cpp:191–257</span> <span class="loc">statusbar/SB/UpdateQueue.cpp:107–140</span> <span class="loc">statusbar/SB/Instruments/CPULoad.cpp:192–238</span> — review #5 (redesign portion)</div>
+        <p><span class="label">Goal</span></p>
+        <p>Stop the three unsynchronized fixed-interval <code>sleep_for</code> timers (render loop, <code>UpdateQueue</code>, dedicated <code>CPULoad</code> thread) from fighting CPU idle residency. Drive sampling and rendering from a single coalesced timer so wakeups align.</p>
+        <p><span class="label">Tasks</span></p>
+        <ul class="tasks">
+            <li>Design a single scheduler/timer that fires at a base tick and dispatches each instrument on its own multiple of that tick (subsuming the per-instrument cadence from M10).</li>
+            <li>Decide the fate of the dedicated <code>CPULoad</code> sampling thread — fold it into the shared schedule if its two-sample-with-sleep model allows, or document why it must stay separate.</li>
+            <li>Fold the render-loop timing (post-M13) into the same schedule so the UI redraw coalesces with sampling.</li>
+            <li>Preserve sleep/wake gating and clean stop behaviour across the new model.</li>
+            <li>Measure wakeups/idle residency and energy before and after with <code>powermetrics</code>/Instruments; record the delta. This is the milestone whose benefit most needs proof.</li>
+        </ul>
+        <p><span class="label">Status</span></p>
+        <p><span class="pill st-notstarted">Not started</span></p>
+        <p><span class="label">Completed</span></p>
+        <p class="fill"></p>
+        <p><span class="label">Implementation notes</span></p>
+        <p class="fill"></p>
+        <p><span class="label">Review comments</span></p>
+        <p class="fill"></p>
+    </div>
+
+    <!-- M16 -->
+    <div class="ms">
+        <div class="ms-head">
+            <span class="id">M16</span>
+            <h4>Move battery and network to event notifications <span class="energy-badge">ENERGY</span></h4>
+            <span class="sev sev-medium">Medium</span>
+        </div>
+        <div class="tags"><span class="loc">statusbar/SB/Instruments/BatteryInfo.cpp</span> <span class="loc">statusbar/SB/Instruments/NetworkInfo.cpp</span> — review #5 (event-driven portion)</div>
+        <p><span class="label">Goal</span></p>
+        <p>Replace polling of the slowest-changing sources with OS notifications so they wake the process only when something actually changes.</p>
+        <p><span class="label">Tasks</span></p>
+        <ul class="tasks">
+            <li>Drive battery updates from <code>IOPSNotificationCreateRunLoopSource</code> instead of the polled interval.</li>
+            <li>Drive network updates from <code>SCNetworkReachability</code> (and/or SystemConfiguration dynamic-store notifications) instead of the polled interval.</li>
+            <li>Integrate these run-loop sources with the existing <code>SleepManager</code> run loop (or a dedicated run loop), keeping teardown/gating consistent.</li>
+            <li>Fall back gracefully if a notification source cannot be created (keep a low-frequency poll as a safety net).</li>
+            <li>Verify battery/network display updates promptly on real events (plug/unplug, Wi-Fi change) and that idle wakeups drop; record the energy delta.</li>
+        </ul>
+        <p><span class="label">Status</span></p>
+        <p><span class="pill st-notstarted">Not started</span></p>
+        <p><span class="label">Completed</span></p>
+        <p class="fill"></p>
+        <p><span class="label">Implementation notes</span></p>
+        <p class="fill"></p>
+        <p><span class="label">Review comments</span></p>
+        <p class="fill"></p>
+    </div>
+
+    <!-- ============================================================ -->
+    <h2>Phase 5 — Housekeeping &amp; documentation</h2>
+    <p class="lead">Low-urgency Info items. #17 requires no code change — it is a documentation/decision milestone.</p>
+
+    <!-- M17 -->
+    <div class="ms">
+        <div class="ms-head">
+            <span class="id">M17</span>
+            <h4>Replace deprecated <code>kIOMasterPortDefault</code></h4>
+            <span class="sev sev-info">Info</span>
+        </div>
+        <div class="tags"><span class="loc">GPULoad.cpp:155</span> <span class="loc">TemperatureInfo.cpp:149</span> — review #15</div>
+        <p><span class="label">Goal</span></p>
+        <p>Move off the deprecated constant name (renamed to <code>kIOMainPortDefault</code> in macOS 12+) while keeping older SDKs building.</p>
+        <p><span class="label">Tasks</span></p>
+        <ul class="tasks">
+            <li>Check the project's deployment target / minimum SDK.</li>
+            <li>Switch to <code>kIOMainPortDefault</code> where the deployment target allows, or add a compatibility alias for older SDKs (<code>#ifndef kIOMainPortDefault … #define kIOMainPortDefault kIOMasterPortDefault</code>).</li>
+            <li>Verify a clean build with no deprecation warnings on the current toolchain.</li>
+        </ul>
+        <p><span class="label">Status</span></p>
+        <p><span class="pill st-notstarted">Not started</span></p>
+        <p><span class="label">Completed</span></p>
+        <p class="fill"></p>
+        <p><span class="label">Implementation notes</span></p>
+        <p class="fill"></p>
+        <p><span class="label">Review comments</span></p>
+        <p class="fill"></p>
+    </div>
+
+    <!-- M18 -->
+    <div class="ms">
+        <div class="ms-head">
+            <span class="id">M18</span>
+            <h4>Document (or make explicit) the thread/singleton lifetime model</h4>
+            <span class="sev sev-info">Info</span>
+        </div>
+        <div class="tags"><span class="loc">UpdateQueue.cpp:139</span> <span class="loc">CPULoad.cpp:80</span> <span class="loc">SleepManager.cpp:166</span> — review #17</div>
+        <p><span class="label">Goal</span></p>
+        <p>The detached threads and never-freed singletons are a deliberate choice for a process that lives until <code>q</code>/kill. Make the intent explicit so leak checkers and future readers understand it. No behavioural change required.</p>
+        <p><span class="label">Tasks</span></p>
+        <ul class="tasks">
+            <li>Add a short comment at each <code>detach()</code> / <code>call_once</code>+<code>new</code> site documenting the intentional process-lifetime ownership and the absence of a shutdown path.</li>
+            <li>Optionally convert the singletons to function-local statics to make the lifetime model self-documenting — <strong>ask before doing this</strong>, as it is a structural change beyond documentation.</li>
+            <li>No functional verification needed beyond confirming the build is unchanged.</li>
+        </ul>
+        <p><span class="label">Status</span></p>
+        <p><span class="pill st-notstarted">Not started</span></p>
+        <p><span class="label">Completed</span></p>
+        <p class="fill"></p>
+        <p><span class="label">Implementation notes</span></p>
+        <p class="fill"></p>
+        <p><span class="label">Review comments</span></p>
+        <p class="fill"></p>
+    </div>
+
+    <hr>
+
+    <h2>Appendix — finding-to-milestone map</h2>
+    <ul class="footnote">
+        <li>#1 (High) → M1 · #2 (Med) → M8 · #3 (Med) → M9 · #4 (Med) → M2 · #5 (Med) → M10 (cadence) + M15/M16 (redesign)</li>
+        <li>#6 (Med) → M3 · #7 (Med) → M4 · #8 (Low) → M10 · #9 (Low) → M11 · #10 (Low) → M12</li>
+        <li>#11 (Low) → M5 · #12 (Low) → M7 · #13 (Low) → M6 · #14 (Low) → M13</li>
+        <li>#15 (Info) → M17 · #16 (Info) → M14 · #17 (Info) → M18</li>
+    </ul>
+    <p class="footnote">Verification sources for the Mach-API claims (findings #4/#7) are listed in the Appendix of the source review. Measure energy-tagged milestones (M8, M9, M10, M13, M15, M16) with <code>powermetrics</code>/Instruments and record before/after in each milestone's notes.</p>
+
+</div>
+</body>
+</html>

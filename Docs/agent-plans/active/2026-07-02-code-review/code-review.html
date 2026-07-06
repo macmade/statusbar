@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>statusbar — Code Review</title>
+<style>
+    :root {
+        --bg:        #0f1115;
+        --bg-alt:    #171a21;
+        --bg-card:   #1c2029;
+        --border:    #2a2f3a;
+        --text:      #d7dce3;
+        --text-dim:  #9aa4b2;
+        --text-fade: #6b7480;
+        --accent:    #6ea8fe;
+        --mono:      ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    }
+    * { box-sizing: border-box; }
+    body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        line-height: 1.6;
+        font-size: 16px;
+    }
+    .wrap { max-width: 960px; margin: 0 auto; padding: 48px 24px 96px; }
+    h1 { font-size: 30px; font-weight: 700; margin: 0 0 4px; letter-spacing: -0.02em; }
+    h2 {
+        font-size: 21px; font-weight: 650; margin: 48px 0 16px;
+        padding-bottom: 8px; border-bottom: 1px solid var(--border);
+        letter-spacing: -0.01em;
+    }
+    h3 { font-size: 16px; margin: 0; }
+    p { margin: 0 0 14px; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code {
+        font-family: var(--mono); font-size: 0.88em;
+        background: var(--bg-alt); padding: 1px 6px; border-radius: 4px;
+        border: 1px solid var(--border); color: #e6c07b;
+    }
+    .meta { color: var(--text-dim); font-size: 14px; margin-bottom: 2px; }
+    .meta strong { color: var(--text); font-weight: 600; }
+    .lead { color: var(--text-dim); }
+
+    /* severity capsules */
+    .pill {
+        display: inline-block; font-size: 11px; font-weight: 700;
+        letter-spacing: 0.05em; text-transform: uppercase;
+        padding: 3px 10px; border-radius: 999px; color: #0f1115;
+        vertical-align: middle;
+    }
+    .sev-critical { background: #ff5c5c; }
+    .sev-high     { background: #ff9f43; }
+    .sev-medium   { background: #ffd45c; }
+    .sev-low      { background: #6ea8fe; }
+    .sev-info     { background: #9aa4b2; }
+
+    /* summary counts */
+    .counts { display: flex; flex-wrap: wrap; gap: 10px; margin: 20px 0 8px; }
+    .count-chip {
+        display: flex; align-items: center; gap: 8px;
+        background: var(--bg-card); border: 1px solid var(--border);
+        border-radius: 10px; padding: 8px 14px; font-size: 14px;
+    }
+    .count-chip .n { font-weight: 700; font-size: 18px; }
+
+    /* finding cards */
+    .finding {
+        background: var(--bg-card); border: 1px solid var(--border);
+        border-radius: 12px; padding: 20px 22px; margin: 16px 0;
+    }
+    .finding-head {
+        display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+        margin-bottom: 12px;
+    }
+    .finding-head .id { color: var(--text-fade); font-family: var(--mono); font-size: 13px; }
+    .finding-head h3 { flex: 1 1 60%; }
+    .tags { margin: 2px 0 12px; font-size: 13px; color: var(--text-dim); }
+    .tag {
+        display: inline-block; background: var(--bg-alt); border: 1px solid var(--border);
+        border-radius: 6px; padding: 2px 8px; margin-right: 6px; font-size: 12px;
+    }
+    .loc { font-family: var(--mono); font-size: 12.5px; color: #e6c07b; }
+    .label { color: var(--text-fade); font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; margin: 14px 0 4px; }
+    .rec { border-left: 3px solid var(--accent); padding-left: 14px; margin-top: 12px; }
+    .rec p { margin-bottom: 6px; }
+    ul { margin: 4px 0 14px; padding-left: 22px; }
+    li { margin-bottom: 6px; }
+    pre {
+        background: #0b0d11; border: 1px solid var(--border); border-radius: 8px;
+        padding: 14px 16px; overflow-x: auto; font-family: var(--mono);
+        font-size: 13px; line-height: 1.5; color: var(--text);
+    }
+    pre code { background: none; border: none; padding: 0; color: inherit; }
+    .energy-badge {
+        display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 0.04em;
+        color: #7ee787; border: 1px solid #2ea04366; background: #2ea04322;
+        border-radius: 6px; padding: 2px 8px; margin-left: 4px;
+    }
+    hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
+    .footnote { color: var(--text-fade); font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+    <h1>statusbar — Code Review</h1>
+    <p class="meta"><strong>Generated:</strong> 2026-07-02</p>
+    <p class="meta"><strong>Scope:</strong> Whole repository (all tracked C++ sources under <code>statusbar/</code>).</p>
+    <p class="meta"><strong>Primary focus:</strong> energy consumption &amp; CPU usage (battery life for an always-on widget), per the requested emphasis.</p>
+
+    <h2>Summary</h2>
+    <p>
+        <code>statusbar</code> is a small, cleanly-structured C++ ncurses terminal widget that displays CPU, GPU,
+        memory, battery, temperature, network and date/time. The architecture is consistent (PIMPL throughout,
+        one type per file, singleton <em>observers</em> feeding an ncurses render loop) and the author has clearly
+        already invested in energy behaviour: the refresh interval was raised from 500 ms to 1 s, sleep/wake
+        notifications gate the polling loops, and the SMC key set is cached so only temperature keys are re-read.
+        Those are the right instincts and the foundation is solid.
+    </p>
+    <p>
+        That said, the review surfaced one genuine crash risk (an unchecked <code>ifaddrs</code> dereference on the
+        network path, which is on by default), a handful of latency/undefined-behaviour defects that are masked on
+        typical hardware but real, and — most relevant to your focus — several concrete energy wins. The biggest
+        energy costs are per-key SMC open/close handshakes on every temperature poll, a full IORegistry property
+        copy on every GPU poll, three independent one-second wake loops that never coalesce, and a per-second Mach
+        port-right leak. None of these are architectural dead-ends; each has a localized, low-risk fix.
+    </p>
+
+    <div class="counts">
+        <div class="count-chip"><span class="n" style="color:#ff5c5c">0</span> Critical</div>
+        <div class="count-chip"><span class="n" style="color:#ff9f43">1</span> High</div>
+        <div class="count-chip"><span class="n" style="color:#ffd45c">6</span> Medium</div>
+        <div class="count-chip"><span class="n" style="color:#6ea8fe">7</span> Low</div>
+        <div class="count-chip"><span class="n" style="color:#9aa4b2">3</span> Info</div>
+    </div>
+
+    <h2>Notes</h2>
+    <ul>
+        <li>This is a whole-repository review, not a diff review, so there is no regression section. Where relevant I checked the git history (e.g. <code>d413715</code> raised the interval to 1 s; <code>209e318</code> reduced SMC key reads; <code>c9ec26d</code> added sleep/wake gating) to understand intent, and the findings build on that direction rather than undoing it.</li>
+        <li>Two Mach-API claims below (the <code>mach_host_self()</code> leak and the <code>vm_deallocate</code> size) were verified against external documentation rather than asserted from memory — sources are linked in the Appendix.</li>
+        <li>Runtime model reviewed: <code>main</code> starts the enabled observers, then <code>Screen::start(1000)</code> drives an ncurses render loop at ~1 Hz. Observers run on two other threads — a dedicated <code>CPULoad</code> sampling thread and the shared <code>UpdateQueue</code> thread (GPU, memory, battery, temperature, network). A fourth thread runs the <code>SleepManager</code> run loop.</li>
+        <li>Not covered in depth: the Xcode project/build settings, the <code>xcconfig</code> submodule, and CI configuration — the focus was the application source.</li>
+    </ul>
+
+    <h2>Findings</h2>
+
+    <!-- ============ HIGH ============ -->
+    <div class="finding">
+        <div class="finding-head">
+            <span class="id">#1</span>
+            <h3>Unchecked <code>ifa_addr</code> dereference can crash the network poll</h3>
+            <span class="pill sev-high">High</span>
+        </div>
+        <div class="tags">
+            <span class="tag">crash</span><span class="tag">stability</span>
+            <span class="loc">statusbar/SB/Instruments/NetworkInfo.cpp:172</span>
+        </div>
+        <p><span class="label">Description</span></p>
+        <p>
+            <code>getNetworkInfo()</code> walks the <code>getifaddrs()</code> linked list and immediately reads
+            <code>interface-&gt;ifa_addr-&gt;sa_family</code>. Per the <code>getifaddrs(3)</code> contract,
+            <code>ifa_addr</code> may be <code>NULL</code> for interfaces that have no address assigned (this occurs
+            in practice for certain tunnel/utun and point-to-point interfaces). When such an interface is present,
+            the dereference is a null-pointer read and the process crashes. Because network display is enabled by
+            default (<code>Options</code> turns everything on when no flags are given) and the poll runs once per
+            second, this is a real, recurring crash exposure, not a theoretical one.
+        </p>
+        <pre><code>while( interface != nullptr )
+{
+    if( interface-&gt;ifa_addr-&gt;sa_family == AF_INET )   // ifa_addr may be NULL
+    {
+        ...</code></pre>
+        <div class="rec">
+            <p><span class="label">Recommendation</span></p>
+            <p>Guard the pointer before dereferencing, and advance the iterator:</p>
+            <pre><code>if( interface-&gt;ifa_addr != nullptr &amp;&amp; interface-&gt;ifa_addr-&gt;sa_family == AF_INET )</code></pre>
+        </div>
+    </div>
+
+    <!-- ============ MEDIUM ============ -->
+    <div class="finding">
+        <div class="finding-head">
+            <span class="id">#2</span>
+            <h3>SMC user-client is opened and closed on <em>every</em> key read <span class="energy-badge">ENERGY</span></h3>
+            <span class="pill sev-medium">Medium</span>
+        </div>
+        <div class="tags">
+            <span class="tag">performance</span><span class="tag">energy</span>
+            <span class="loc">statusbar/SB/Instruments/Internal/SMC.cpp:49–58</span>
+        </div>
+        <p><span class="label">Description</span></p>
+        <p>
+            <code>callSMCFunction()</code> wraps each SMC transaction in a
+            <code>kSMCUserClientOpen</code> → <code>IOConnectCallStructMethod</code> → <code>kSMCUserClientClose</code>
+            sequence — three IOKit user-client round trips per key. <code>readSMCSensors()</code> then reads every
+            cached temperature key once per second. On Apple Silicon there are commonly dozens of <code>T*</code>
+            sensor keys, so steady-state temperature polling costs roughly <code>3 × N</code> kernel round trips every
+            second (plus a one-time full-keyspace enumeration on the first poll, each of those keys also paying the
+            open/close). For an always-on battery widget this is the single largest avoidable source of wakeups and
+            kernel work.
+        </p>
+        <div class="rec">
+            <p><span class="label">Recommendation</span></p>
+            <p>
+                Hoist the open/close out of the per-key path: the connection is already opened once at init via
+                <code>IOServiceOpen</code>. Do one <code>kSMCUserClientOpen</code> before a read batch and one
+                <code>kSMCUserClientClose</code> after (or open once for the process lifetime), turning
+                <code>3 × N</code> round trips into <code>N + 2</code>. Combine with #5 (lower temperature cadence)
+                for a compounding win. Measure with <code>powermetrics</code>/Instruments before and after.
+            </p>
+        </div>
+    </div>
+
+    <div class="finding">
+        <div class="finding-head">
+            <span class="id">#3</span>
+            <h3>GPU poll copies <em>all</em> accelerator properties every second <span class="energy-badge">ENERGY</span></h3>
+            <span class="pill sev-medium">Medium</span>
+        </div>
+        <div class="tags">
+            <span class="tag">performance</span><span class="tag">energy</span>
+            <span class="loc">statusbar/SB/Instruments/GPULoad.cpp:169</span>
+        </div>
+        <p><span class="label">Description</span></p>
+        <p>
+            <code>getGPULoad()</code> calls <code>IORegistryEntryCreateCFProperties()</code>, which materializes the
+            <em>entire</em> property dictionary of each IOAccelerator entry into CoreFoundation objects, purely to
+            read three numbers out of the nested <code>PerformanceStatistics</code> dictionary. That property blob
+            can be large, and this allocation/serialization happens once per second, per accelerator, for the life of
+            the process.
+        </p>
+        <div class="rec">
+            <p><span class="label">Recommendation</span></p>
+            <p>
+                Fetch only what is needed with <code>IORegistryEntrySearchCFProperty()</code> for the
+                <code>PerformanceStatistics</code> key (with <code>kIORegistryIterateRecursively</code> if required),
+                avoiding the full-dictionary copy. Consider polling the GPU at a lower cadence than 1 Hz as well.
+            </p>
+        </div>
+    </div>
+
+    <div class="finding">
+        <div class="finding-head">
+            <span class="id">#4</span>
+            <h3><code>mach_host_self()</code> port-right leak on every CPU and memory poll</h3>
+            <span class="pill sev-medium">Medium</span>
+        </div>
+        <div class="tags">
+            <span class="tag">resource leak</span><span class="tag">stability</span>
+            <span class="loc">statusbar/SB/Instruments/CPULoad.cpp:251</span>
+            <span class="loc">statusbar/SB/Instruments/MemoryInfo.cpp:244</span>
+        </div>
+        <p><span class="label">Description</span></p>
+        <p>
+            Both <code>getCPULoadInfo()</code> and <code>getMemoryInfo()</code> call <code>mach_host_self()</code>
+            inline and never release the returned send right. Unlike <code>mach_task_self()</code> — which is a
+            cached global and must <em>not</em> be deallocated — <code>mach_host_self()</code> returns a fresh send
+            right to the host port that the caller owns and must balance with
+            <code>mach_port_deallocate(mach_task_self(), host)</code> (see Appendix for sources). Here it is leaked
+            twice per second. Over the multi-day uptime typical of a status widget this accumulates hundreds of
+            thousands of port references; this exact pattern has caused port-exhaustion bugs in psutil and Chromium.
+        </p>
+        <div class="rec">
+            <p><span class="label">Recommendation</span></p>
+            <p>
+                Cache the host port once (e.g. a file-scope <code>static const mach_port_t host = mach_host_self();</code>
+                initialized once), or deallocate it after each use:
+            </p>
+            <pre><code>mach_port_t host = mach_host_self();
+/* ... use host ... */
+mach_port_deallocate( mach_task_self(), host );</code></pre>
+        </div>
+    </div>
+
+    <div class="finding">
+        <div class="finding-head">
+            <span class="id">#5</span>
+            <h3>Three independent ~1 Hz wake loops with fixed sleeps; no coalescing <span class="energy-badge">ENERGY</span></h3>
+            <span class="pill sev-medium">Medium</span>
+        </div>
+        <div class="tags">
+            <span class="tag">architecture</span><span class="tag">energy</span>
+            <span class="loc">statusbar/SB/UI/Screen.cpp:191–257</span>
+            <span class="loc">statusbar/SB/UpdateQueue.cpp:107–140</span>
+            <span class="loc">statusbar/SB/Instruments/CPULoad.cpp:192–238</span>
+        </div>
+        <p><span class="label">Description</span></p>
+        <p>
+            The process wakes at least three times per second on unsynchronized schedules: the render loop
+            (<code>sleep_for(refreshInterval)</code>), the <code>UpdateQueue</code> thread
+            (<code>sleep_for(1s)</code>, running GPU/memory/battery/temperature/network back-to-back), and the
+            dedicated <code>CPULoad</code> thread (sample → <code>sleep_for(1s)</code> → sample). Each fixed-interval
+            <code>sleep_for</code> is an independent timer that fights CPU idle residency. Metrics like temperature,
+            battery capacity, memory and network address change far more slowly than 1 Hz, so much of this work is
+            redundant. This is the "many cheap wakeups" pattern that most hurts battery on modern Apple Silicon.
+        </p>
+        <div class="rec">
+            <p><span class="label">Recommendation</span></p>
+            <p>
+                Give each instrument its own cadence instead of a shared 1 s tick — e.g. CPU/GPU at 1–2 s, memory at
+                ~2 s, temperature/battery/network at 5–10 s. Better still, drive everything from a single timer so
+                wakeups coalesce, and for infrequently-changing sources (battery, network) prefer event
+                notifications (<code>IOPSNotificationCreateRunLoopSource</code>, <code>SCNetworkReachability</code>)
+                over polling. Even without a redesign, raising the slow observers' intervals is a low-risk, direct
+                battery win.
+            </p>
+        </div>
+    </div>
+
+    <div class="finding">
+        <div class="finding-head">
+            <span class="id">#6</span>
+            <h3><code>String::format()</code> reuses a <code>va_list</code> after it is consumed (UB)</h3>
+            <span class="pill sev-medium">Medium</span>
+        </div>
+        <div class="tags">
+            <span class="tag">undefined behavior</span><span class="tag">stability</span>
+            <span class="loc">statusbar/SB/Helpers/String.cpp:40–48</span>
+        </div>
+        <p><span class="label">Description</span></p>
+        <p>
+            <code>format()</code> calls <code>vsnprintf(nullptr, 0, format, ap)</code> to size the buffer, then calls
+            <code>vsnprintf(cp, size+1, format, ap)</code> with the <em>same</em> <code>ap</code>. Per the C standard,
+            after a function that invokes <code>va_arg</code> (which <code>vsnprintf</code> does internally) returns,
+            the <code>va_list</code> is left indeterminate; using it again without re-initialization is undefined
+            behaviour and can print garbage or crash. This runs every second via
+            <code>bytesToHumanReadable()</code> (memory) and <code>fourCC()</code> (SMC key names, on the temperature
+            path). It happens to work on some ABIs, which is exactly why it is easy to miss.
+        </p>
+        <pre><code>int size = vsnprintf( nullptr, 0, format, ap );
+...
+vsnprintf( cp, size + 1, format, ap );   // ap already consumed → UB</code></pre>
+        <div class="rec">
+            <p><span class="label">Recommendation</span></p>
+            <p>Use <code>va_copy</code> for the sizing pass and keep the original for the real call:</p>
+            <pre><code>va_list ap, ap2;
+va_start( ap, format );
+va_copy( ap2, ap );
+int size = vsnprintf( nullptr, 0, format, ap2 );
+va_end( ap2 );
+/* ... allocate ... */
+vsnprintf( cp, size + 1, format, ap );
+va_end( ap );</code></pre>
+        </div>
+    </div>
+
+    <div class="finding">
+        <div class="finding-head">
+            <span class="id">#7</span>
+            <h3><code>vm_deallocate</code> uses the wrong element size (over-deallocates 2×)</h3>
+            <span class="pill sev-medium">Medium</span>
+        </div>
+        <div class="tags">
+            <span class="tag">undefined behavior</span><span class="tag">correctness</span>
+            <span class="loc">statusbar/SB/Instruments/CPULoad.cpp:276</span>
+        </div>
+        <p><span class="label">Description</span></p>
+        <p>
+            The buffer returned by <code>host_processor_info()</code> holds <code>cpuLoadInfoCount</code>
+            <code>integer_t</code> (4-byte) elements, so the correct release size is
+            <code>cpuLoadInfoCount × sizeof(integer_t)</code>. The code instead passes
+            <code>sizeof(processor_info_array_t) × cpuLoadInfoCount</code>. Since
+            <code>processor_info_array_t</code> is a <em>pointer</em> type (<code>sizeof == 8</code>), this requests
+            deallocation of twice the region that was mapped. On typical core counts the buffer is well under one
+            page and page-rounding hides the error, but on high-core-count machines (many-core Mac Pro / server
+            configurations) the 2× size can extend past the mapped region into an adjacent allocation and unmap
+            memory that was never returned — latent UB.
+        </p>
+        <pre><code>vm_deallocate( mach_task_self(),
+               reinterpret_cast&lt;vm_address_t&gt;( cpuLoadInfo ),
+               sizeof( processor_info_array_t ) * cpuLoadInfoCount );  // 8 * count</code></pre>
+        <div class="rec">
+            <p><span class="label">Recommendation</span></p>
+            <pre><code>vm_deallocate( mach_task_self(),
+               reinterpret_cast&lt;vm_address_t&gt;( cpuLoadInfo ),
+               cpuLoadInfoCount * sizeof( integer_t ) );</code></pre>
+        </div>
+    </div>
+
+    <!-- ============ LOW ============ -->
+    <div class="finding">
+        <div class="finding-head">
+            <span class="id">#8</span>
+            <h3>Temperature polled at 1 Hz reads both HID and full SMC sets each tick <span class="energy-badge">ENERGY</span></h3>
+            <span class="pill sev-low">Low</span>
+        </div>
+        <div class="tags">
+            <span class="tag">performance</span><span class="tag">energy</span>
+            <span class="loc">statusbar/SB/Instruments/TemperatureInfo.cpp:166–199</span>
+        </div>
+        <p><span class="label">Description</span></p>
+        <p>
+            Each temperature observe reads <em>both</em> the HID sensor set — <code>readHIDSensors()</code> calls
+            <code>IOHIDEventSystemClientCopyServices()</code> and enumerates every matching service, copying a
+            "Product" property and an event per service — and the SMC set (#2), once per second. Temperature is a
+            slowly-varying quantity; sampling it every second doubles the sensor traversal cost for no visible
+            benefit.
+        </p>
+        <div class="rec">
+            <p><span class="label">Recommendation</span></p>
+            <p>Poll temperature on a longer interval (e.g. every 5 s) — this pairs naturally with the cadence change in #5 and multiplies the savings from #2.</p>
+        </div>
+    </div>
+
+    <div class="finding">
+        <div class="finding-head">
+            <span class="id">#9</span>
+            <h3>Render loop queries all six instruments regardless of enabled options</h3>
+            <span class="pill sev-low">Low</span>
+        </div>
+        <div class="tags">
+            <span class="tag">performance</span>
+            <span class="loc">statusbar/main.cpp:96–101</span>
+        </div>
+        <p><span class="label">Description</span></p>
+        <p>
+            The <code>onUpdate</code> closure unconditionally constructs <code>CPULoad::current()</code>,
+            <code>GPULoad::current()</code>, <code>MemoryInfo::current()</code>, <code>BatteryInfo::current()</code>,
+            <code>NetworkInfo::current()</code> and <code>TemperatureInfo::current()</code> every frame, even when the
+            corresponding option is off. Each <code>current()</code> takes the instrument's recursive mutex and
+            returns a deep copy (PIMPL clone). It is minor, but it is pure waste when only a subset is displayed.
+        </p>
+        <div class="rec">
+            <p><span class="label">Recommendation</span></p>
+            <p>Guard each <code>current()</code> behind its <code>options.xxx()</code> flag so disabled instruments are neither copied nor locked.</p>
+        </div>
+    </div>
+
+    <div class="finding">
+        <div class="finding-head">
+            <span class="id">#10</span>
+            <h3><code>ColorPair::pairForColors</code> does a linear scan on every print</h3>
+            <span class="pill sev-low">Low</span>
+        </div>
+        <div class="tags">
+            <span class="tag">performance</span>
+            <span class="loc">statusbar/SB/UI/ColorPair.cpp:44–57</span>
+            <span class="loc">statusbar/SB/UI/Window.cpp:96–106</span>
+        </div>
+        <p><span class="label">Description</span></p>
+        <p>
+            Every colored <code>print</code> linearly scans the 81-entry (<code>9×9</code>) pair vector twice (once
+            for the foreground/background pair, once to reset to clear/clear), doing a <code>Color</code> equality
+            compare each step. A single CPU line issues ~13 prints, and the render runs every second, so this is a
+            few thousand comparisons per second. Additionally <code>Window::print</code> calls
+            <code>Screen::shared().supportsColors()</code> twice per print, each taking a recursive-mutex lock.
+        </p>
+        <div class="rec">
+            <p><span class="label">Recommendation</span></p>
+            <p>Replace the linear search with an O(1) lookup — the pair index is derivable directly from the two color enum values (a 9×9 table), removing both the scan and the repeated hot-path locking.</p>
+        </div>
+    </div>
+
+    <div class="finding">
+        <div class="finding-head">
+            <span class="id">#11</span>
+            <h3>Non-atomic <code>bool</code> flags read outside the lock (data race)</h3>
+            <span class="pill sev-low">Low</span>
+        </div>
+        <div class="tags">
+            <span class="tag">undefined behavior</span><span class="tag">concurrency</span>
+            <span class="loc">statusbar/SB/UI/Screen.cpp:191, 249</span>
+            <span class="loc">statusbar/SB/UpdateQueue.cpp:115</span>
+            <span class="loc">statusbar/SB/Instruments/CPULoad.cpp:196</span>
+        </div>
+        <p><span class="label">Description</span></p>
+        <p>
+            The <code>_sleeping</code>/<code>sleeping</code> and <code>_running</code> flags are written under a mutex
+            (from the sleep-callback thread / <code>stop()</code>) but read without the lock in the loop conditions
+            and the sleep checks. Concurrent unsynchronized access to the same non-atomic object is a data race and
+            therefore undefined behaviour under the C++ memory model, even though it is benign in practice for a
+            single bool on these architectures.
+        </p>
+        <div class="rec">
+            <p><span class="label">Recommendation</span></p>
+            <p>Make these flags <code>std::atomic&lt;bool&gt;</code> (they need no other locking), or read them under the same mutex that guards the write.</p>
+        </div>
+    </div>
+
+    <div class="finding">
+        <div class="finding-head">
+            <span class="id">#12</span>
+            <h3>Runtime strings passed as printf format strings</h3>
+            <span class="pill sev-low">Low</span>
+        </div>
+        <div class="tags">
+            <span class="tag">stability</span><span class="tag">correctness</span>
+            <span class="loc">statusbar/SB/UI/Window.cpp:82</span>
+            <span class="loc">statusbar/SB/UI/Screen.cpp:151</span>
+        </div>
+        <p><span class="label">Description</span></p>
+        <p>
+            <code>Window::print(const std::string &amp; s)</code> forwards to <code>::wprintw(win, s.c_str())</code>
+            and <code>Screen::print(const std::string &amp; s)</code> to <code>::printw(s.c_str())</code> — the string
+            is interpreted as a <em>format</em> string. Today every caller passes literals or values that cannot
+            contain <code>%</code>, so it is latent rather than live, but any future caller passing text with a
+            stray <code>%</code> (a network name, a file path) would read garbage varargs or crash.
+        </p>
+        <div class="rec">
+            <p><span class="label">Recommendation</span></p>
+            <p>Use a fixed format: <code>::wprintw(win, "%s", s.c_str())</code> and <code>::printw("%s", s.c_str())</code>.</p>
+        </div>
+    </div>
+
+    <div class="finding">
+        <div class="finding-head">
+            <span class="id">#13</span>
+            <h3>Type-punning via <code>reinterpret_cast&lt;float*&gt;</code> in SMC float decode</h3>
+            <span class="pill sev-low">Low</span>
+        </div>
+        <div class="tags">
+            <span class="tag">undefined behavior</span>
+            <span class="loc">statusbar/SB/Instruments/Internal/SMC.cpp:273</span>
+        </div>
+        <p><span class="label">Description</span></p>
+        <p>
+            <code>readFloat32()</code> reinterprets a <code>uint32_t*</code> as <code>float*</code> and dereferences
+            it. Reading an object through a pointer of an incompatible type violates the strict-aliasing rule; it
+            works under clang today but is undefined behaviour and can break under aggressive optimization.
+        </p>
+        <div class="rec">
+            <p><span class="label">Recommendation</span></p>
+            <p>Copy the bits instead: <code>float f; std::memcpy(&amp;f, &amp;u32, sizeof(f));</code> (or use <code>std::bit_cast</code> in C++20).</p>
+        </div>
+    </div>
+
+    <div class="finding">
+        <div class="finding-head">
+            <span class="id">#14</span>
+            <h3>Keyboard/resize handled by non-blocking poll then a fixed sleep</h3>
+            <span class="pill sev-low">Low</span>
+        </div>
+        <div class="tags">
+            <span class="tag">responsiveness</span><span class="tag">energy</span>
+            <span class="loc">statusbar/SB/UI/Screen.cpp:216–255</span>
+        </div>
+        <p><span class="label">Description</span></p>
+        <p>
+            The render loop <code>poll()</code>s stdin with a 0 ms timeout (returns immediately) and then
+            <code>sleep_for(refreshInterval)</code>. As a result, a keypress such as <code>q</code> (quit) and
+            terminal resizes are only noticed on the next tick — up to a full second of latency — and the loop wakes
+            on a timer even when nothing is happening.
+        </p>
+        <div class="rec">
+            <p><span class="label">Recommendation</span></p>
+            <p>Block in <code>poll()</code> with the refresh interval as its timeout instead of sleeping separately: the loop then wakes immediately on input and otherwise on the timer, improving responsiveness and removing one redundant wake per cycle.</p>
+        </div>
+    </div>
+
+    <!-- ============ INFO ============ -->
+    <div class="finding">
+        <div class="finding-head">
+            <span class="id">#15</span>
+            <h3>Deprecated <code>kIOMasterPortDefault</code></h3>
+            <span class="pill sev-info">Info</span>
+        </div>
+        <div class="tags">
+            <span class="tag">style</span><span class="tag">deprecation</span>
+            <span class="loc">GPULoad.cpp:155, TemperatureInfo.cpp:149</span>
+        </div>
+        <p><span class="label">Description</span></p>
+        <p><code>kIOMasterPortDefault</code> was renamed to <code>kIOMainPortDefault</code> (macOS 12+); the old name still works but is deprecated.</p>
+        <div class="rec">
+            <p><span class="label">Recommendation</span></p>
+            <p>Switch to <code>kIOMainPortDefault</code> when the deployment target allows, or alias it for older SDKs.</p>
+        </div>
+    </div>
+
+    <div class="finding">
+        <div class="finding-head">
+            <span class="id">#16</span>
+            <h3>Per-tick heap churn in every observer</h3>
+            <span class="pill sev-info">Info</span>
+        </div>
+        <div class="tags">
+            <span class="tag">performance</span>
+            <span class="loc">CPULoad.cpp:227–235, MemoryInfo.cpp:212–214, GPULoad.cpp:144–146, …</span>
+        </div>
+        <p><span class="label">Description</span></p>
+        <p>
+            Each <code>observe()</code> does <code>delete</code> + <code>new</code> on the shared info object every
+            cycle, and <code>current()</code> deep-copies it. The allocator traffic is small but avoidable; assigning
+            into an existing object (or storing values directly rather than a heap pointer) would remove it.
+        </p>
+        <div class="rec">
+            <p><span class="label">Recommendation</span></p>
+            <p>Store the info by value and update fields in place under the lock, avoiding the per-tick allocate/free.</p>
+        </div>
+    </div>
+
+    <div class="finding">
+        <div class="finding-head">
+            <span class="id">#17</span>
+            <h3>Detached threads and singletons are never torn down</h3>
+            <span class="pill sev-info">Info</span>
+        </div>
+        <div class="tags">
+            <span class="tag">architecture</span>
+            <span class="loc">UpdateQueue.cpp:139, CPULoad.cpp:80, SleepManager.cpp:166</span>
+        </div>
+        <p><span class="label">Description</span></p>
+        <p>
+            Observer threads are <code>detach()</code>ed and the singletons are heap-allocated via
+            <code>new</code> in <code>call_once</code> with no matching cleanup. This is a deliberate and acceptable
+            choice for a process that lives until <code>q</code>/kill, but it does mean there is no clean shutdown
+            path and tools like leak checkers will flag the singletons at exit.
+        </p>
+        <div class="rec">
+            <p><span class="label">Recommendation</span></p>
+            <p>No action required for normal use; documenting the intent (or using function-local statics) would make the lifetime model explicit.</p>
+        </div>
+    </div>
+
+    <h2>Strengths</h2>
+    <ul>
+        <li><strong>Consistent, disciplined structure.</strong> PIMPL everywhere, one type per file, uniform observer pattern, and value semantics with copy/move + <code>swap</code> — easy to read and extend.</li>
+        <li><strong>Energy awareness is already present.</strong> Sleep/wake gating (<code>SleepManager</code>), the 500 ms→1 s interval bump, and SMC key caching show the right priorities; the findings above extend that work rather than contradict it.</li>
+        <li><strong>Careful CoreFoundation memory handling.</strong> The battery and GPU paths pair <code>CFRelease</code>/<code>IOObjectRelease</code> correctly across early-return branches, and type IDs are validated before casting CF values.</li>
+        <li><strong>Defensive SMC reads.</strong> <code>readSMCKey</code> bounds the copy against <code>maxSize</code> and validates result codes, and <code>readSMCKeyInfo</code> caches key metadata to avoid repeat lookups.</li>
+    </ul>
+
+    <h2>Appendix — verification sources</h2>
+    <p class="footnote">API-behaviour claims that were checked against external documentation rather than asserted from memory:</p>
+    <ul class="footnote">
+        <li><strong><code>mach_host_self()</code> ownership</strong> (finding #4): the returned send right must be released with <code>mach_port_deallocate</code>, unlike <code>mach_task_self()</code>. See
+            <a href="https://github.com/giampaolo/psutil/issues/333">psutil #333 (Mach port leak on macOS)</a>,
+            <a href="https://github.com/rentzsch/mach_override/pull/16">mach_override PR #16</a>, and
+            <a href="https://robert.sesek.com/2012/1/debugging_mach_ports.html">Robert Sesek, "Debugging Mach Ports"</a>.</li>
+        <li><strong><code>host_processor_info</code> deallocation size</strong> (finding #7): the region should be freed as <code>count × sizeof(integer_t)</code>. See the
+            <a href="https://web.mit.edu/darwin/src/modules/xnu/osfmk/man/">Mach Kernel Interface Reference</a> and
+            <a href="https://github.com/Hammerspoon/hammerspoon/issues/1238">Hammerspoon #1238 (host_processor_info memory handling)</a>.</li>
+    </ul>
+
+    <hr>
+    <p class="footnote">Report scope: whole repository. Findings: 0 Critical · 1 High · 6 Medium · 7 Low · 3 Info.</p>
+
+</div>
+</body>
+</html>
