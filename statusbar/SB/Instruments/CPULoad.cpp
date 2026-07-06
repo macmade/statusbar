@@ -274,7 +274,7 @@ namespace SB
             );
         }
 
-        vm_deallocate( mach_task_self(), reinterpret_cast< vm_address_t >( cpuLoadInfo ), sizeof( processor_info_array_t ) * cpuLoadInfoCount );
+        vm_deallocate( mach_task_self(), reinterpret_cast< vm_address_t >( cpuLoadInfo ), cpuLoadInfoCount * sizeof( integer_t ) );
 
         return info;
     }

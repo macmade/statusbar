@@ -281,11 +281,16 @@ va_end( ap );</code></pre>
             <li>Build and run; verify CPU load still updates and no deallocation fault occurs.</li>
         </ul>
         <p><span class="label">Status</span></p>
-        <p><span class="pill st-notstarted">Not started</span></p>
+        <p><span class="pill st-completed">Completed</span></p>
         <p><span class="label">Completed</span></p>
-        <p class="fill"></p>
+        <p class="fill">2026-07-06</p>
         <p><span class="label">Implementation notes</span></p>
-        <p class="fill"></p>
+        <div class="fill">
+            <p>Changed the <code>vm_deallocate</code> size in <code>getCPULoadInfo()</code> (<code>CPULoad.cpp:277</code>) from <code>sizeof( processor_info_array_t ) * cpuLoadInfoCount</code> to <code>cpuLoadInfoCount * sizeof( integer_t )</code>. Verified against the SDK headers: <code>processor_info_array_t</code> is <code>typedef integer_t * ...</code> (an 8-byte pointer), while the mapped region is an array of <code>integer_t</code> (<code>typedef int integer_t</code>, 4 bytes). The old size therefore requested <code>8 × count</code> for a <code>4 × count</code> region — a 2× over-deallocation. <code>cpuLoadInfoCount</code> is the <code>integer_t</code> element count reported by <code>host_processor_info()</code> (the loop indexes <code>cpuLoadInfo[ (i * CPU_STATE_MAX) + CPU_STATE_* ]</code> for <code>i &lt; cpuCount</code>, i.e. <code>cpuCount * CPU_STATE_MAX</code> elements), so <code>count * sizeof(integer_t)</code> is exactly the mapped byte size and matches Apple's documented deallocation pattern.</p>
+            <p>No sign/overflow/shortening risk: the <code>unsigned int</code> count promotes to <code>size_t</code> and assigns cleanly to the 8-byte unsigned <code>vm_size_t</code> parameter (widening only, both operands unsigned) — clean under the project's <code>-Wconversion</code>/<code>-Wsign-conversion</code>/<code>-Wshorten-64-to-32</code>/<code>-Werror</code> set. Edge cases safe: <code>cpuLoadInfo == nullptr</code> is handled by the earlier early return; a zero count makes the deallocate a harmless no-op. The out-of-scope cached <code>host</code> line (M2) was left untouched.</p>
+            <p>Verified with <code>xcodebuild ... -configuration Debug build</code>: <strong>BUILD SUCCEEDED</strong>, no warnings under <code>-Werror</code>.</p>
+            <p><strong>Automated review loop:</strong> 1 round, converged. The fresh-context reviewer compiled/measured the type sizes on this platform, confirmed <code>cpuLoadInfoCount</code> is the element count, the size matches the mapped region and Apple's pattern, no warning/overflow risk, and safe edge cases. No Critical/High/Medium/Low findings; one Info note that correctness is (correctly) tied to the <code>PROCESSOR_CPU_LOAD_INFO</code> flavor yielding <code>integer_t</code> elements — nothing to change.</p>
+        </div>
         <p><span class="label">Review comments</span></p>
         <p class="fill"></p>
     </div>
