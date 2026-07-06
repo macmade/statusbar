@@ -25,7 +25,6 @@
 #include "SB/UI/ColorPair.hpp"
 #include <ncurses.h>
 #include <mutex>
-#include <tuple>
 #include <vector>
 
 namespace SB
@@ -37,23 +36,27 @@ namespace SB
             IMPL();
             IMPL( const IMPL & o );
             ~IMPL();
-
-            std::vector< std::tuple< short, Color, Color > > _pairs;
     };
+
+    /* ncurses color-pair number for a (foreground, background) combination.
+     * clear() is -1 and the eight ncurses colors are 0..7, so value() + 1
+     * gives 0..8; the 9x9 grid maps to pair numbers 1..81. The constructor
+     * registers every pair with this same index, so the two never drift.
+     */
+    static short pairIndex( const Color & foreground, const Color & background )
+    {
+        short fg = static_cast< short >( foreground.value() + 1 );
+        short bg = static_cast< short >( background.value() + 1 );
+
+        return static_cast< short >( ( fg * 9 ) + bg + 1 );
+    }
 
     short ColorPair::pairForColors( const Color & foreground, const Color & background )
     {
-        ColorPair & pairs = ColorPair::shared();
+        /* Constructing the shared instance registers the pairs with ncurses. */
+        ColorPair::shared();
 
-        for( const auto & p: pairs.impl->_pairs )
-        {
-            if( std::get< 1 >( p ) == foreground && std::get< 2 >( p ) == background )
-            {
-                return std::get< 0 >( p );
-            }
-        }
-
-        return 0;
+        return pairIndex( foreground, background );
     }
 
     ColorPair & ColorPair::shared()
@@ -97,7 +100,6 @@ namespace SB
 
     ColorPair::IMPL::IMPL()
     {
-        short                i      = 1;
         std::vector< Color > colors =
         {
             Color::clear(),
@@ -111,20 +113,16 @@ namespace SB
             Color::white()
         };
 
-        for( const auto & c1: std::vector< Color >( colors ) )
+        for( const auto & c1: colors )
         {
-            for( const auto & c2: std::vector< Color >( colors ) )
+            for( const auto & c2: colors )
             {
-                ::init_pair( i, c1.value(), c2.value() );
-                this->_pairs.push_back( { i, c1, c2 } );
-
-                i++;
+                ::init_pair( pairIndex( c1, c2 ), c1.value(), c2.value() );
             }
         }
     }
 
-    ColorPair::IMPL::IMPL( const IMPL & o ):
-        _pairs( o._pairs )
+    ColorPair::IMPL::IMPL( const IMPL & )
     {}
 
     ColorPair::IMPL::~IMPL()

@@ -93,14 +93,16 @@ namespace SB
     
     void Window::print( const Color & foreground, const Color & background, const std::string & s )
     {
-        if( Screen::shared().supportsColors() )
+        const bool colors = Screen::shared().supportsColors();
+        
+        if( colors )
         {
             ::wattrset( this->impl->_win, static_cast< int >( COLOR_PAIR( ColorPair::pairForColors( foreground, background ) ) ) );
         }
         
         ::wprintw( this->impl->_win, "%s", s.c_str() );
         
-        if( Screen::shared().supportsColors() )
+        if( colors )
         {
             ::wattrset( this->impl->_win, static_cast< int >( COLOR_PAIR( ColorPair::pairForColors( Color::clear(), Color::clear() ) ) ) );
         }
