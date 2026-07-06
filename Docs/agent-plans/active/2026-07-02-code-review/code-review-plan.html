@@ -596,11 +596,16 @@ va_end( ap );</code></pre>
             <li>Note: this changes the render-loop timing that Phase 4 will fold into a single coalesced timer — keep the change minimal.</li>
         </ul>
         <p><span class="label">Status</span></p>
-        <p><span class="pill st-notstarted">Not started</span></p>
+        <p><span class="pill st-completed">Completed</span></p>
         <p><span class="label">Completed</span></p>
-        <p class="fill"></p>
+        <p class="fill">2026-07-06</p>
         <p><span class="label">Implementation notes</span></p>
-        <p class="fill"></p>
+        <div class="fill">
+            <p>Restructured the <code>Screen::start</code> render loop (<code>Screen.cpp</code>). Previously a non-blocking <code>poll( &amp;p, 1, 0 )</code> + <code>getc</code> ran <em>inside</em> the <code>_rmtx</code> critical section (the <code>unix.BlockInCriticalSection</code> analyzer note), followed by a separate <code>std::this_thread::sleep_for( refreshInterval )</code> (5&nbsp;s when sleeping). Now: the locked block only copies the callback vectors and handles resize; after dispatching <code>onResize</code>/<code>onUpdate</code> and calling <code>refresh()</code>, a block <em>outside</em> the lock runs <code>poll( &amp;p, 1, timeout )</code> with <code>timeout = _sleeping ? 5000 : static_cast&lt; int &gt;( refreshInterval )</code>. The separate <code>sleep_for</code> is gone, so the loop blocks in <code>poll</code> and wakes immediately on input — cutting keypress latency from up to ~1&nbsp;s to prompt, and removing one wake per cycle. Rendering happens before the wait, so there is no startup delay. Removed the now-unused <code>&lt;thread&gt;</code>/<code>&lt;chrono&gt;</code> includes.</p>
+            <p>Sleep-gating preserved (5&nbsp;s poll timeout when the machine sleeps — blocks, never spins). Resize still detected by the top-of-loop <code>ioctl</code>; a <code>SIGWINCH</code>/EINTR makes <code>poll</code> return -1 (treated as no input) and the next iteration re-reads the size. The pre-existing <code>getc</code>-in-critical-section analyzer warning is now gone (verified in the build output). Kept minimal per the plan; Phase&nbsp;4 (M15) folds this timing into the coalesced timer.</p>
+            <p>Verified with <code>xcodebuild ... -configuration Debug build</code>: <strong>BUILD SUCCEEDED</strong>, no warnings under <code>-Werror</code>, and no <code>BlockInCriticalSection</code> analyzer note.</p>
+            <p><strong>Automated review loop:</strong> 2 rounds. Round&nbsp;1 confirmed the lock fix, no startup regression, correct keypress/resize/sleep-gating and warning-clean types, but flagged a <strong>Medium</strong>: with <code>poll</code> now the sole pacing, a hung-up/errored/EOF stdin (terminal closed, or <code>statusbar &lt; /dev/null</code>) would make <code>poll</code> return immediately every iteration → 100% CPU busy-spin (the old always-sleep code could not). <strong>Fixed</strong> by gating the read on <code>p.revents &amp; POLLIN</code> and cleanly exiting the loop (setting <code>_running = false</code>) on a non-POLLIN condition or a <code>getc</code> EOF. Round&nbsp;2 (fresh context) confirmed all four cases (terminal close, <code>/dev/null</code>, normal timeout, real keypress) are handled with no spin, no interactive regression (POLLHUP/EOF never fire on a healthy cbreak tty; EINTR can't reach the breaks), and applied a follow-up <strong>Low</strong> fix so the loop leaves <code>_running</code> consistent on exit. Converged — no Critical/High/Medium remaining. (Low/Info also noted: a <code>refreshInterval == 0</code> would busy-poll, but the sole caller uses <code>start( 1000 )</code>; not changed.)</p>
+        </div>
         <p><span class="label">Review comments</span></p>
         <p class="fill"></p>
     </div>

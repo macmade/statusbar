@@ -29,8 +29,6 @@
 #include <ncurses.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
-#include <thread>
-#include <chrono>
 #include <vector>
 #include <poll.h>
 #include <condition_variable>
@@ -187,65 +185,70 @@ namespace SB
             std::vector< std::function< void() > >       onResize;
             std::vector< std::function< void( int ) > >  onKeyPress;
             std::vector< std::function< void() > >       onUpdate;
-            int                                          key( 0 );
-            
+
             ::ioctl( STDOUT_FILENO, TIOCGWINSZ, &s );
-            
+
             {
                 std::lock_guard< std::recursive_mutex > l( this->impl->_rmtx );
-                
+
                 onKeyPress = this->impl->_onKeyPress;
                 onUpdate   = this->impl->_onUpdate;
-                
+
                 if( s.ws_col != this->impl->_width || s.ws_row != this->impl->_height )
                 {
                     this->impl->_width  = s.ws_col;
                     this->impl->_height = s.ws_row;
-                    
+
                     onResize = this->impl->_onResize;
                 }
-                
-                {
-                    static struct pollfd p;
-                    
-                    memset( &p, 0, sizeof( p ) );
-                    
-                    p.fd      = 0;
-                    p.events  = POLLIN;
-                    p.revents = 0;
-                    
-                    if( poll( &p, 1, 0 ) > 0 )
-                    {
-                        key        = getc( stdin );
-                        onKeyPress = this->impl->_onKeyPress;
-                    }
-                }
             }
-            
+
             for( const auto & f: onResize )
             {
                 f();
             }
-            
-            for( const auto & f: onKeyPress )
-            {
-                f( key );
-            }
-            
+
             for( const auto & f: onUpdate )
             {
                 f();
             }
-            
+
             this->refresh();
 
-            if( this->impl->_sleeping )
             {
-                std::this_thread::sleep_for( std::chrono::seconds( 5 ) );
-            }
-            else
-            {
-                std::this_thread::sleep_for( std::chrono::milliseconds( refreshInterval ) );
+                struct pollfd p;
+                int           timeout = this->impl->_sleeping ? 5000 : static_cast< int >( refreshInterval );
+
+                memset( &p, 0, sizeof( p ) );
+
+                p.fd      = 0;
+                p.events  = POLLIN;
+                p.revents = 0;
+
+                if( poll( &p, 1, timeout ) > 0 )
+                {
+                    if( ( p.revents & POLLIN ) == 0 )
+                    {
+                        /* stdin hung up or errored: stop instead of busy-spinning. */
+                        this->impl->_running = false;
+
+                        break;
+                    }
+
+                    int key = getc( stdin );
+
+                    if( key == EOF )
+                    {
+                        this->impl->_running = false;
+
+                        break;
+                    }
+
+                    for( const auto & f: onKeyPress )
+                    {
+                        f( key );
+                    }
+                }
             }
         }
         
