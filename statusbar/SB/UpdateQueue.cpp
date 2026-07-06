@@ -27,6 +27,7 @@
 #include <mutex>
 #include <vector>
 #include <thread>
+#include <atomic>
 
 namespace SB
 {
@@ -41,7 +42,7 @@ namespace SB
 
             std::vector< std::function< void() > > _functions;
             std::recursive_mutex                   _rmtx;
-            bool                                   _sleeping;
+            std::atomic< bool >                    _sleeping;
             UUID                                   _sleepRegistration;
     };
 
@@ -83,8 +84,6 @@ namespace SB
         (
             [ & ]( SleepManager::Event e )
             {
-                std::lock_guard< std::recursive_mutex > l( this->_rmtx );
-
                 if( e == SleepManager::Event::WillSleep )
                 {
                     this->_sleeping = true;

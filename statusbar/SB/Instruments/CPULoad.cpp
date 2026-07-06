@@ -27,6 +27,7 @@
 #include "SB/SleepManager.hpp"
 #include <mutex>
 #include <thread>
+#include <atomic>
 #include <unistd.h>
 #include <mach/mach.h>
 
@@ -61,7 +62,7 @@ namespace SB
             static std::recursive_mutex * rmtx;
             static CPULoad              * load;
             static bool                   observing;
-            static bool                   sleeping;
+            static std::atomic< bool >    sleeping;
             static UUID                 * sleepRegistration;
     };
 
@@ -172,8 +173,6 @@ namespace SB
                     (
                         []( SleepManager::Event e )
                         {
-                            std::lock_guard< std::recursive_mutex > l( *( rmtx ) );
-
                             if( e == SleepManager::Event::WillSleep )
                             {
                                 sleeping = true;
@@ -282,6 +281,6 @@ namespace SB
     std::recursive_mutex * CPULoad::IMPL::rmtx              = nullptr;
     CPULoad              * CPULoad::IMPL::load              = nullptr;
     bool                   CPULoad::IMPL::observing         = false;
-    bool                   CPULoad::IMPL::sleeping          = false;
+    std::atomic< bool >    CPULoad::IMPL::sleeping          = false;
     UUID                 * CPULoad::IMPL::sleepRegistration = nullptr;
 }

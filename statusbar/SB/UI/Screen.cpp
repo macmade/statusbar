@@ -35,6 +35,7 @@
 #include <poll.h>
 #include <condition_variable>
 #include <mutex>
+#include <atomic>
 
 namespace SB
 {
@@ -52,8 +53,8 @@ namespace SB
             std::size_t          _width;
             std::size_t          _height;
             bool                 _colors;
-            bool                 _running;
-            bool                 _sleeping;
+            std::atomic< bool >  _running;
+            std::atomic< bool >  _sleeping;
             UUID                 _sleepRegistration;
             std::recursive_mutex _rmtx;
     };
@@ -125,8 +126,6 @@ namespace SB
     
     bool Screen::isRunning() const
     {
-        std::lock_guard< std::recursive_mutex > l( this->impl->_rmtx );
-        
         return this->impl->_running;
     }
     
@@ -175,15 +174,9 @@ namespace SB
     
     void Screen::start( unsigned int refreshInterval )
     {
+        if( this->impl->_running.exchange( true ) )
         {
-            std::lock_guard< std::recursive_mutex > l( this->impl->_rmtx );
-            
-            if( this->impl->_running )
-            {
-                return;
-            }
-            
-            this->impl->_running = true;
+            return;
         }
 
         ::curs_set( 0 );
@@ -264,8 +257,6 @@ namespace SB
     
     void Screen::stop()
     {
-        std::lock_guard< std::recursive_mutex > l( this->impl->_rmtx );
-        
         this->impl->_running = false;
     }
     
@@ -301,8 +292,6 @@ namespace SB
         (
             [ & ]( SleepManager::Event e )
             {
-                std::lock_guard< std::recursive_mutex > l( this->_rmtx );
-
                 if( e == SleepManager::Event::WillSleep )
                 {
                     this->_sleeping = true;
