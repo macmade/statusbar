@@ -234,6 +234,13 @@ namespace SB
             return {};
         }
 
+        SMC::UserClientSession session( IMPL::smcConnection );
+
+        if( session.isOpen() == false )
+        {
+            return {};
+        }
+
         if( IMPL::smcKeys->size() == 0 )
         {
             uint32_t count = SMC::readSMCKeyCount( IMPL::smcConnection, *( IMPL::smcCache ) );

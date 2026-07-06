@@ -418,13 +418,26 @@ va_end( ap );</code></pre>
             <li>Measure temperature-poll cost with <code>powermetrics</code>/Instruments before and after; record the delta.</li>
         </ul>
         <p><span class="label">Status</span></p>
-        <p><span class="pill st-notstarted">Not started</span></p>
+        <p><span class="pill st-completed">Completed</span></p>
         <p><span class="label">Completed</span></p>
-        <p class="fill"></p>
+        <p class="fill">2026-07-06</p>
         <p><span class="label">Implementation notes</span></p>
-        <p class="fill"></p>
+        <div class="fill">
+            <p>Chose the <strong>batch enter/leave</strong> option. Added <code>SMC::openSMCUserClient( io_connect_t )</code> and <code>SMC::closeSMCUserClient( io_connect_t )</code> (declared in <code>SMC.hpp</code>, defined in <code>SMC.cpp</code>), each null-checking the connection and issuing the single <code>kSMCUserClientOpen</code>/<code>kSMCUserClientClose</code> <code>IOConnectCallMethod</code>. Reduced <code>callSMCFunction()</code> to just the <code>IOConnectCallStructMethod</code> transaction (plus its connection null-check) — it no longer opens/closes per call. In <code>TemperatureInfo::IMPL::readSMCSensors()</code>, one <code>openSMCUserClient()</code> now runs after the connection null-check (returning <code>{}</code> if it fails) and one <code>closeSMCUserClient()</code> runs right before the final <code>return sensors;</code>, wrapping both the first-poll key enumeration and the steady-state read loop in a single session.</p>
+            <p>Effect: a steady-state poll drops from ~<code>3 × N</code> IOKit round trips (open + struct + close per key; key-info is cached in <code>smcCache</code> after the first poll) to <code>N + 2</code>. The read results, key-info caching, and <code>output.result</code>/<code>kIOReturnSuccess</code> validation are unchanged — only the round-trip count changes. <code>callSMCFunction</code> is internal to the SMC namespace and reached only via <code>readSMCSensors()</code>, so no other code path issues a transaction without an open session.</p>
+            <p>Verified with <code>xcodebuild ... -configuration Debug build</code>: <strong>BUILD SUCCEEDED</strong>, no warnings under <code>-Werror</code>. Header declarations and the simplified <code>callSMCFunction</code> keep aligned <code>=</code> and blank-line-before-return per house style.</p>
+            <p><strong>Energy measurement (pending):</strong> the plan asks for a <code>powermetrics</code>/Instruments before/after delta and a confirmation that temperature values are unchanged on real hardware. That requires running the widget interactively (and <code>powermetrics</code> needs elevated privileges), so it was <em>not</em> captured in this environment — it needs a hands-on measurement by the maintainer.</p>
+            <p><strong>Automated review loop:</strong> 1 round, converged. The fresh-context reviewer traced every exit path and confirmed the session is balanced on all normal paths (every mid-batch exit is a <code>continue</code>, the only return after open closes first, and the open-failure branch returns before opening succeeds), all nested transactions run inside the session, error handling preserved, no other caller affected, and clean style. No Critical/High/Medium findings. Two lower-severity items (left for maintainer decision):</p>
+            <ul>
+                <li><strong>F1 (Low, exception-safety):</strong> if an allocation between open and close throws <code>std::bad_alloc</code> (<code>push_back</code>, <code>std::string</code>/<code>fourCC</code>), <code>closeSMCUserClient</code> is bypassed and the user-client session leaks, then the next poll re-opens an already-open session. Only reachable under memory exhaustion. Suggested fix: a small RAII guard (ctor opens, dtor closes) that also matches the codebase's RAII/no-throw preference.</li>
+                <li><strong>F2 (Info, behavior):</strong> a single <code>kSMCUserClientOpen</code> failure now aborts the whole poll (returns <code>{}</code>), whereas the old per-call pattern affected only one key. A reasonable, arguably intended consequence of batching; no leak. No change recommended.</li>
+            </ul>
+            <p><strong>Follow-up — F1 resolved (at maintainer's request):</strong> replaced the manual open/close in <code>readSMCSensors()</code> with an RAII guard <code>SMC::UserClientSession</code> (declared in <code>SMC.hpp</code>, defined in <code>SMC.cpp</code>). Its constructor calls <code>openSMCUserClient()</code> and records success in <code>_open</code>; its destructor calls <code>closeSMCUserClient()</code> iff <code>_open</code>; it is non-copyable (deleted copy ctor/assign, so no implicit move → no double-close). <code>readSMCSensors()</code> now constructs the guard, returns <code>{}</code> if <code>!session.isOpen()</code>, and otherwise runs the batch — the session closes automatically on the normal return <em>and</em> on stack unwinding if an allocation throws, so the session can no longer leak. Still exactly one open + one close per poll. A second fresh-context review of the guard found no defects (correct close-on-every-path, correct member-init order with no <code>-Wreorder</code>, sufficient non-copyable protection, no <code>-Werror</code> risk). <strong>BUILD SUCCEEDED</strong> under <code>-Werror</code>.</p>
+        </div>
         <p><span class="label">Review comments</span></p>
-        <p class="fill"></p>
+        <div class="fill">
+            <p>Maintainer asked to handle finding <strong>F1</strong> — add the RAII guard so the SMC user-client session is always closed, including on an exception between open and close.</p>
+        </div>
     </div>
 
     <!-- M9 -->

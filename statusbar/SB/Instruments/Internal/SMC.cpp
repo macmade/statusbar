@@ -38,6 +38,44 @@ namespace SB
 {
     namespace SMC
     {
+        bool openSMCUserClient( io_connect_t connection )
+        {
+            if( connection == IO_OBJECT_NULL )
+            {
+                return false;
+            }
+
+            return IOConnectCallMethod( connection, kSMCUserClientOpen, nullptr, 0, nullptr, 0, nullptr, nullptr, nullptr, nullptr ) == kIOReturnSuccess;
+        }
+
+        bool closeSMCUserClient( io_connect_t connection )
+        {
+            if( connection == IO_OBJECT_NULL )
+            {
+                return false;
+            }
+
+            return IOConnectCallMethod( connection, kSMCUserClientClose, nullptr, 0, nullptr, 0, nullptr, nullptr, nullptr, nullptr ) == kIOReturnSuccess;
+        }
+
+        UserClientSession::UserClientSession( io_connect_t connection ):
+            _connection( connection ),
+            _open(       openSMCUserClient( connection ) )
+        {}
+
+        UserClientSession::~UserClientSession()
+        {
+            if( this->_open )
+            {
+                closeSMCUserClient( this->_connection );
+            }
+        }
+
+        bool UserClientSession::isOpen() const
+        {
+            return this->_open;
+        }
+
         bool callSMCFunction( io_connect_t connection, uint32_t function, const SMCParamStruct & input, SMCParamStruct & output )
         {
             if( connection == IO_OBJECT_NULL )
@@ -45,20 +83,10 @@ namespace SB
                 return false;
             }
 
-            size_t        inputSize  = sizeof( SMCParamStruct );
-            size_t        outputSize = sizeof( SMCParamStruct );
-            kern_return_t result     = IOConnectCallMethod( connection, kSMCUserClientOpen, nullptr, 0, nullptr, 0, nullptr, nullptr, nullptr, nullptr );
+            size_t inputSize  = sizeof( SMCParamStruct );
+            size_t outputSize = sizeof( SMCParamStruct );
 
-            if( result != kIOReturnSuccess )
-            {
-                return false;
-            }
-
-            result = IOConnectCallStructMethod( connection, function, &input, inputSize, &output, &outputSize );
-
-            IOConnectCallMethod( connection, kSMCUserClientClose, nullptr, 0, nullptr, 0, nullptr, nullptr, nullptr, nullptr );
-
-            return result == kIOReturnSuccess;
+            return IOConnectCallStructMethod( connection, function, &input, inputSize, &output, &outputSize ) == kIOReturnSuccess;
         }
 
         bool readSMCKeyInfo( io_connect_t connection, SMCKeyInfoData & info, uint32_t key, std::map< uint32_t, SMCKeyInfoData > & cache )

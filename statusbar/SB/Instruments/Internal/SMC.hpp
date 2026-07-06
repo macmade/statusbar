@@ -33,6 +33,8 @@ namespace SB
 {
     namespace SMC
     {
+        bool     openSMCUserClient( io_connect_t connection );
+        bool     closeSMCUserClient( io_connect_t connection );
         bool     callSMCFunction( io_connect_t connection, uint32_t function, const SMCParamStruct & input, SMCParamStruct & output );
         bool     readSMCKeyInfo( io_connect_t connection, SMCKeyInfoData & info, uint32_t key, std::map< uint32_t, SMCKeyInfoData > & cache );
         bool     readSMCKey( io_connect_t connection, uint32_t & key, uint32_t index );
@@ -44,6 +46,32 @@ namespace SB
         double   readFloat32( uint8_t * data, uint32_t size );
         double   readFloat32( uint8_t * data, uint32_t size );
         double   readIOFloat( uint8_t * data, uint32_t size );
+
+        /*!
+         * @brief   RAII guard for an SMC user-client session.
+         * @discussion
+         *          Opens the SMC user client on construction and closes it on
+         *          destruction, so a batch of key reads issues a single
+         *          open/close regardless of how the scope is left (including an
+         *          exception). Non-copyable.
+         */
+        class UserClientSession
+        {
+            public:
+
+                explicit UserClientSession( io_connect_t connection );
+                ~UserClientSession();
+
+                UserClientSession( const UserClientSession & )              = delete;
+                UserClientSession & operator =( const UserClientSession & ) = delete;
+
+                bool isOpen() const;
+
+            private:
+
+                io_connect_t _connection;
+                bool         _open;
+        };
     }
 }
 
