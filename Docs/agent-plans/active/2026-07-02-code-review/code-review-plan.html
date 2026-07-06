@@ -250,11 +250,16 @@ va_end( ap );</code></pre>
             <li>Build and verify memory sizes and SMC key names still format correctly.</li>
         </ul>
         <p><span class="label">Status</span></p>
-        <p><span class="pill st-notstarted">Not started</span></p>
+        <p><span class="pill st-completed">Completed</span></p>
         <p><span class="label">Completed</span></p>
-        <p class="fill"></p>
+        <p class="fill">2026-07-06</p>
         <p><span class="label">Implementation notes</span></p>
-        <p class="fill"></p>
+        <div class="fill">
+            <p>Fixed the <code>va_list</code> reuse UB in <code>String::format()</code> (<code>String.cpp:33</code>). Declared a second <code>va_list ap2</code>; after <code>va_start( ap, format )</code> did <code>va_copy( ap2, ap )</code>; the sizing pass <code>vsnprintf( nullptr, 0, format, ap2 )</code> now consumes the <em>copy</em>, which is closed immediately with <code>va_end( ap2 )</code>; the real formatting pass <code>vsnprintf( cp, ..., format, ap )</code> keeps using the pristine original <code>ap</code>, closed by the existing <code>va_end( ap )</code> at the end. This is the exact pattern from the plan.</p>
+            <p>Verified <code>va_end</code> balance on every control-flow path: <code>size &lt;= 0</code> early-out (ap2 already ended, ap ended at end), <code>calloc</code> failure (<code>cp == nullptr</code> — ap never consumed but still validly ended), and success. No path double-ends or leaks a list. The <code>calloc</code>/<code>size + 1</code> arithmetic and the formatting call are untouched, so output for <code>bytesToHumanReadable()</code>, <code>fourCC()</code>, and any other caller is unchanged. Declarations <code>ap</code>/<code>ap2</code>/<code>s</code> kept column-aligned per house style.</p>
+            <p>Verified with <code>xcodebuild ... -configuration Debug build</code>: <strong>BUILD SUCCEEDED</strong>, no warnings under <code>-Werror</code>.</p>
+            <p><strong>Automated review loop:</strong> 1 round, converged. The fresh-context reviewer traced every path and confirmed correct <code>va_copy</code> placement, balanced <code>va_end</code> on all paths, no behavioral change, and consistent style. No Critical/High/Medium findings. Info-only, pre-existing and out of scope: a theoretical <code>size == INT_MAX</code> overflow in <code>size + 1</code> (predates this change, unreachable for these callers) and pre-existing trailing whitespace on the line after <code>va_end( ap )</code> — left untouched.</p>
+        </div>
         <p><span class="label">Review comments</span></p>
         <p class="fill"></p>
     </div>

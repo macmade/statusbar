@@ -33,11 +33,15 @@ namespace SB
         std::string format( const char * format, ... )
         {
             va_list     ap;
+            va_list     ap2;
             std::string s;
 
             va_start( ap, format );
+            va_copy( ap2, ap );
 
-            int size = vsnprintf( nullptr, 0, format, ap );
+            int size = vsnprintf( nullptr, 0, format, ap2 );
+
+            va_end( ap2 );
 
             if( size > 0 )
             {
