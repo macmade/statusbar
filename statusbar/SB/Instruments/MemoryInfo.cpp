@@ -238,10 +238,11 @@ namespace SB
             return { 0, 0, 0, 0, 0, 0, 0 };
         }
 
-        mach_msg_type_number_t count = HOST_VM_INFO_COUNT;
-        vm_statistics_data_t   vmStat;
+        static const mach_port_t host   = mach_host_self();
+        mach_msg_type_number_t   count  = HOST_VM_INFO_COUNT;
+        vm_statistics_data_t     vmStat;
 
-        if( host_statistics( mach_host_self(), HOST_VM_INFO, reinterpret_cast< host_info_t >( &vmStat ), &count ) != KERN_SUCCESS )
+        if( host_statistics( host, HOST_VM_INFO, reinterpret_cast< host_info_t >( &vmStat ), &count ) != KERN_SUCCESS )
         {
             return { 0, 0, 0, 0, 0, 0, 0 };
         }

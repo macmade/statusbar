@@ -209,11 +209,16 @@
             <li>Sanity-check port count over time (e.g. observe Mach port count does not grow while running).</li>
         </ul>
         <p><span class="label">Status</span></p>
-        <p><span class="pill st-notstarted">Not started</span></p>
+        <p><span class="pill st-completed">Completed</span></p>
         <p><span class="label">Completed</span></p>
-        <p class="fill"></p>
+        <p class="fill">2026-07-06</p>
         <p><span class="label">Implementation notes</span></p>
-        <p class="fill"></p>
+        <div class="fill">
+            <p>Chose the <strong>cache-once</strong> option: added a function-local <code>static const mach_port_t host = mach_host_self();</code> to both <code>getCPULoadInfo()</code> (<code>CPULoad.cpp:242</code>) and <code>getMemoryInfo()</code> (<code>MemoryInfo.cpp:241</code>), and replaced the inline <code>mach_host_self()</code> arguments to <code>host_processor_info()</code> and <code>host_statistics()</code> with <code>host</code>. This acquires exactly one host-port send right per process for its lifetime instead of a fresh unbalanced right on every poll, eliminating the accumulation. The right is intentionally never deallocated — a single, bounded, process-lifetime hold reclaimed by the kernel at exit (consistent with the widget's run-until-quit model).</p>
+            <p>The same approach is used in both files for consistency. The two statics are independent (one per function), and C++11 guarantees thread-safe "magic static" initialization, so the different threads that call these getters (dedicated CPULoad thread vs. shared UpdateQueue thread) are safe even on a simultaneous first call. The host <em>name</em> port is stable for the process lifetime, so caching produces identical results to re-fetching. A tree-wide grep confirmed these are the only two <code>mach_host_self()</code> call sites — no other leak remains. The <code>vm_deallocate</code> element-size issue at the end of <code>getCPULoadInfo()</code> is a separate finding handled in M4 and was left untouched.</p>
+            <p>Re-aligned the <code>MemoryInfo</code> <code>count</code>/<code>vmStat</code> declaration group so the new line keeps the <code>=</code> aligned (house style). Verified with <code>xcodebuild ... -configuration Debug build</code>: <strong>BUILD SUCCEEDED</strong> with no warnings under <code>-Werror</code>.</p>
+            <p><strong>Automated review loop:</strong> 1 round, converged. The fresh-context reviewer confirmed the leak fix, thread-safety, unchanged behavior, cross-file consistency, absence of other call sites, and no regressions/style issues. No Critical/High/Medium/Low/Info findings.</p>
+        </div>
         <p><span class="label">Review comments</span></p>
         <p class="fill"></p>
     </div>

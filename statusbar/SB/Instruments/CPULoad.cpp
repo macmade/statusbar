@@ -239,6 +239,7 @@ namespace SB
 
     std::vector< CPULoad::IMPL::CPULoadInfo > CPULoad::IMPL::getCPULoadInfo()
     {
+        static const mach_port_t                  host             = mach_host_self();
         std::vector< CPULoad::IMPL::CPULoadInfo > info             = {};
         natural_t                                 cpuCount         = 0;
         processor_info_array_t                    cpuLoadInfo      = nullptr;
@@ -248,7 +249,7 @@ namespace SB
         (
             host_processor_info
             (
-                mach_host_self(),
+                host,
                 PROCESSOR_CPU_LOAD_INFO,
                 &cpuCount,
                 &cpuLoadInfo,
