@@ -42,6 +42,7 @@ namespace SB
             UpdateQueue & operator =( UpdateQueue o ) = delete;
 
             void registerUpdate( const std::function< void() > & f, std::chrono::milliseconds interval );
+            void runDue();
 
         private:
 

@@ -24,10 +24,9 @@
 
 #include "SB/Instruments/CPULoad.hpp"
 #include "SB/Helpers/Vector.hpp"
-#include "SB/SleepManager.hpp"
+#include "SB/UpdateQueue.hpp"
 #include <mutex>
-#include <thread>
-#include <atomic>
+#include <chrono>
 #include <unistd.h>
 #include <mach/mach.h>
 
@@ -56,14 +55,13 @@ namespace SB
             CPULoadInfo;
 
             static void                       init();
-            static void                       observe() __attribute__( ( noreturn ) );
+            static void                       observe();
             static std::vector< CPULoadInfo > getCPULoadInfo();
 
-            static std::recursive_mutex * rmtx;
-            static CPULoad              * load;
-            static bool                   observing;
-            static std::atomic< bool >    sleeping;
-            static UUID                 * sleepRegistration;
+            static std::recursive_mutex       * rmtx;
+            static CPULoad                    * load;
+            static bool                         observing;
+            static std::vector< CPULoadInfo > * previous;
     };
 
     void CPULoad::startObserving()
@@ -78,7 +76,7 @@ namespace SB
 
         IMPL::observing = true;
 
-        std::thread( [] { CPULoad::IMPL::observe(); } ).detach();
+        SB::UpdateQueue::shared().registerUpdate( [] { CPULoad::IMPL::observe(); }, std::chrono::seconds( 1 ) );
     }
 
     CPULoad CPULoad::current()
@@ -164,46 +162,21 @@ namespace SB
             once,
             []
             {
-                rmtx              = new std::recursive_mutex();
-                load              = new CPULoad( 0, 0, 0, 0 );
-                sleeping          = false;
-                sleepRegistration = new UUID
-                (
-                    SleepManager::shared().subscribe
-                    (
-                        []( SleepManager::Event e )
-                        {
-                            if( e == SleepManager::Event::WillSleep )
-                            {
-                                sleeping = true;
-                            }
-                            else if( e == SleepManager::Event::DidPowerOn )
-                            {
-                                sleeping = false;
-                            }
-                        }
-                    )
-                );
+                rmtx     = new std::recursive_mutex();
+                load     = new CPULoad( 0, 0, 0, 0 );
+                previous = new std::vector< CPULoadInfo >();
             }
         );
     }
 
     void CPULoad::IMPL::observe()
     {
-        while( true )
+        std::vector< CPULoadInfo > info = IMPL::getCPULoadInfo();
+
+        if( IMPL::previous->empty() == false )
         {
-            if( sleeping )
-            {
-                std::this_thread::sleep_for( std::chrono::seconds( 5 ) );
-
-                continue;
-            }
-
-            std::vector< CPULoadInfo > info1 = IMPL::getCPULoadInfo();
-
-            std::this_thread::sleep_for( std::chrono::seconds( 1 ) );
-
-            std::vector< CPULoadInfo > info2 = IMPL::getCPULoadInfo();
+            const std::vector< CPULoadInfo > & info1 = *( IMPL::previous );
+            const std::vector< CPULoadInfo > & info2 = info;
 
             int64_t user1   = Vector::reduce< int64_t, CPULoadInfo >( info1, 0, []( int64_t r, CPULoadInfo v ) -> int64_t { return r + v.user; } );
             int64_t user2   = Vector::reduce< int64_t, CPULoadInfo >( info2, 0, []( int64_t r, CPULoadInfo v ) -> int64_t { return r + v.user; } );
@@ -229,6 +202,10 @@ namespace SB
                 IMPL::load->impl->_total  = ( used   / total ) * 100.0;
             }
         }
+
+        using std::swap;
+
+        swap( *( IMPL::previous ), info );
     }
 
     std::vector< CPULoad::IMPL::CPULoadInfo > CPULoad::IMPL::getCPULoadInfo()
@@ -273,9 +250,8 @@ namespace SB
         return info;
     }
 
-    std::recursive_mutex * CPULoad::IMPL::rmtx              = nullptr;
-    CPULoad              * CPULoad::IMPL::load              = nullptr;
-    bool                   CPULoad::IMPL::observing         = false;
-    std::atomic< bool >    CPULoad::IMPL::sleeping          = false;
-    UUID                 * CPULoad::IMPL::sleepRegistration = nullptr;
+    std::recursive_mutex                      * CPULoad::IMPL::rmtx      = nullptr;
+    CPULoad                                   * CPULoad::IMPL::load      = nullptr;
+    bool                                        CPULoad::IMPL::observing = false;
+    std::vector< CPULoad::IMPL::CPULoadInfo > * CPULoad::IMPL::previous  = nullptr;
 }

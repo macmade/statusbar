@@ -28,6 +28,7 @@
 #include "SB/Instruments/BatteryInfo.hpp"
 #include "SB/Instruments/NetworkInfo.hpp"
 #include "SB/Options.hpp"
+#include "SB/UpdateQueue.hpp"
 #include "SB/Instruments/MemoryInfo.hpp"
 #include "SB/Instruments/TemperatureInfo.hpp"
 #include "SB/Helpers/String.hpp"
@@ -71,6 +72,8 @@ int main( int argc, const char * argv[] )
     {
         while( true )
         {
+            SB::UpdateQueue::shared().runDue();
+
             std::this_thread::sleep_for( std::chrono::seconds( 1 ) );
         }
     }
@@ -93,6 +96,8 @@ int main( int argc, const char * argv[] )
         (
             [ & ]
             {
+                SB::UpdateQueue::shared().runDue();
+
                 std::size_t leftWidth = 29;
 
                 if( options.date() == false && options.time() == false )

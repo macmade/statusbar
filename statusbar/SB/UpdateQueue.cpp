@@ -26,7 +26,6 @@
 #include "SB/SleepManager.hpp"
 #include <mutex>
 #include <vector>
-#include <thread>
 #include <atomic>
 #include <chrono>
 
@@ -38,8 +37,6 @@ namespace SB
 
             IMPL();
             ~IMPL();
-
-            void run();
 
             struct Update
             {
@@ -102,8 +99,6 @@ namespace SB
                 }
             }
         );
-
-        this->run();
     }
 
     UpdateQueue::IMPL::~IMPL()
@@ -111,47 +106,33 @@ namespace SB
         SleepManager::shared().unsubscribe( this->_sleepRegistration );
     }
 
-    void UpdateQueue::IMPL::run()
+    void UpdateQueue::runDue()
     {
-        std::thread
-        (
-            [ this ]
+        if( this->impl->_sleeping )
+        {
+            return;
+        }
+
+        std::vector< std::function< void() > > functions;
+        std::chrono::steady_clock::time_point  now = std::chrono::steady_clock::now();
+
+        {
+            std::lock_guard< std::recursive_mutex > l( this->impl->_rmtx );
+
+            for( auto & update: this->impl->_updates )
             {
-                while( true )
+                if( now - update.lastRun >= update.interval )
                 {
-                    if( this->_sleeping )
-                    {
-                        std::this_thread::sleep_for( std::chrono::seconds( 5 ) );
+                    update.lastRun = now;
 
-                        continue;
-                    }
-
-                    std::vector< std::function< void() > > functions;
-                    std::chrono::steady_clock::time_point  now = std::chrono::steady_clock::now();
-
-                    {
-                        std::lock_guard< std::recursive_mutex > l( this->_rmtx );
-
-                        for( auto & update: this->_updates )
-                        {
-                            if( now - update.lastRun >= update.interval )
-                            {
-                                update.lastRun = now;
-
-                                functions.push_back( update.function );
-                            }
-                        }
-                    }
-
-                    for( const auto & f: functions )
-                    {
-                        f();
-                    }
-
-                    std::this_thread::sleep_for( std::chrono::seconds( 1 ) );
+                    functions.push_back( update.function );
                 }
             }
-        )
-        .detach();
+        }
+
+        for( const auto & f: functions )
+        {
+            f();
+        }
     }
 }
