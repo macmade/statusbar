@@ -49,7 +49,7 @@ namespace SB
 
             static void                  init();
             static void                  observe();
-            static TemperatureInfo       getTemperatureInfo();
+            static double                getTemperatureInfo();
             static std::vector< double > readHIDSensors( double & tcal );
             static std::vector< double > readSMCSensors();
 
@@ -166,18 +166,16 @@ namespace SB
 
     void TemperatureInfo::IMPL::observe()
     {
-        TemperatureInfo current = IMPL::getTemperatureInfo();
+        double current = IMPL::getTemperatureInfo();
 
         {
             std::lock_guard< std::recursive_mutex > l( *( IMPL::rmtx ) );
 
-            delete IMPL::info;
-
-            IMPL::info = new TemperatureInfo( current );
+            IMPL::info->impl->_temperature = current;
         }
     }
 
-    TemperatureInfo TemperatureInfo::IMPL::getTemperatureInfo()
+    double TemperatureInfo::IMPL::getTemperatureInfo()
     {
         double tcal = 0;
         double hid  = Vector::reduce< double, double >( IMPL::readHIDSensors( tcal ), 0.0, []( double a, double b ) { return ( a > b ) ? a : b; } );

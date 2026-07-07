@@ -628,13 +628,28 @@ va_end( ap );</code></pre>
             <li>Verify all instruments still report correct values and there are no lifetime regressions.</li>
         </ul>
         <p><span class="label">Status</span></p>
-        <p><span class="pill st-notstarted">Not started</span></p>
+        <p><span class="pill st-completed">Completed</span></p>
         <p><span class="label">Completed</span></p>
-        <p class="fill"></p>
+        <p class="fill">2026-07-07</p>
         <p><span class="label">Implementation notes</span></p>
-        <p class="fill"></p>
+        <div class="fill">
+            <p>Removed the per-tick <code>delete</code>/<code>new</code> in all six observers and replaced it with <strong>direct field writes into the existing stored object under the lock</strong> (Option B, per the maintainer). The object is still allocated once in <code>init()</code> and reused; there is now <em>no</em> per-tick heap allocation for the info object.</p>
+            <p>To keep the sampling I/O outside the lock while avoiding the allocation, the samplers now return raw data instead of a freshly-built wrapper: <code>getGPULoad()</code> and <code>getTemperatureInfo()</code> return <code>double</code>; <code>getMemoryInfo()</code>, <code>getBatteryInfo()</code>, and <code>getNetworkInfo()</code> return their nested <code>IMPL</code> by value (the existing braced <code>return { ... }</code> lists now construct the plain <code>IMPL</code> aggregate on the stack — no heap wrapper — and C++17 guaranteed elision means no copy). <code>observe()</code> samples outside the lock, then under the lock updates the stored object directly. This is legal because each <code>XXX::IMPL</code> is a nested class of <code>XXX</code> and may access <code>XXX</code>'s private <code>impl</code>, while the <code>_field</code>s are <code>IMPL</code>'s own members. The store mechanism is chosen per type:</p>
+            <ul>
+                <li><strong>Multi-field (Memory, Battery, Network):</strong> each nested <code>IMPL</code> gained a <strong>hidden friend</strong> <code>friend void swap( IMPL &amp; o1, IMPL &amp; o2 ) noexcept { using std::swap; ... }</code> (swapping every field), and <code>observe()</code> does a single <code>swap( *( IMPL::info-&gt;impl ), current )</code> found by ADL. This keeps the field list centralized next to the declarations, makes <code>observe()</code> a one-liner, and stays zero-allocation (POD swaps are trivial; <code>std::string</code> swap is a noexcept pointer swap). Chosen over the earlier per-field writes at the maintainer's request, matching the codebase's free-<code>swap</code> idiom. It is defined <em>inline as a hidden friend</em> rather than out-of-line because <code>IMPL</code> is a private nested type that cannot be named at namespace scope.</li>
+                <li><strong>Single-field (GPU, Temperature):</strong> a plain scalar write — <code>IMPL::info-&gt;impl-&gt;_percent = current;</code> / <code>_temperature = current;</code> (a swap of one field buys nothing).</li>
+                <li><strong>CPU:</strong> four by-name writes of the computed doubles (values are produced inline; by-name writes avoid the positional-constructor order risk).</li>
+            </ul>
+            <p><code>current()</code> is unchanged — it still returns a copy of the object under the lock (that copy is inherent to the by-value public API and can't be removed without changing the signature). The one-time object is still never freed at exit, consistent with the intentional-leak model (M18). Field order was checked against each <code>IMPL</code> constructor to rule out silent value corruption.</p>
+            <p>Verified with <code>xcodebuild ... -configuration Debug build</code>: <strong>BUILD SUCCEEDED</strong>, no warnings under <code>-Werror</code> (same-type assignments — no <code>-Wconversion</code>/<code>-Wfloat-conversion</code>; no <code>-Wshadow</code>; no <code>-Wdeprecated-copy</code> since <code>IMPL</code>'s implicit copy-assign is never used; returning the nested <code>IMPL</code> by value is well-formed).</p>
+            <p><strong>Automated review loop:</strong> 1 round, converged. The fresh-context reviewer verified across all six files: legal/correct nested-class field access with exact field names, values identical to before (field order matches each <code>IMPL</code> ctor), no per-tick allocation and no leak/double-free regression, sampling I/O still outside the lock, reads/writes serialized by the same recursive mutex (no torn reads), warning-clean, and unchanged/correct <code>current()</code>. No Critical/High/Medium/Low/Info findings.</p>
+        </div>
         <p><span class="label">Review comments</span></p>
-        <p class="fill"></p>
+        <div class="fill">
+            <p><strong>Constraint (before starting):</strong> the plan's literal "hold the info object by value" (a <code>static</code> value member) is infeasible here — the project builds with <code>-Werror</code> plus <code>-Wglobal-constructors</code> and <code>-Wexit-time-destructors</code> (see <code>Submodules/xcconfig/.../Warnings.xcconfig</code>), which reject any long-lived value of a PIMPL type (non-trivial ctor/dtor). This is why every singleton here uses a <code>static T * = nullptr</code> + lazy <code>new</code>.</p>
+            <p><strong>Maintainer's decision:</strong> since <code>observe()</code> already holds the lock while updating, write the sampled values <em>directly</em> into the existing stored object's fields (Option B), rather than the per-tick <code>delete</code>/<code>new</code>. Keep the object allocated once in <code>init()</code>, keep the sampling I/O outside the lock, and eliminate the per-tick allocation entirely.</p>
+            <p><strong>Follow-up:</strong> maintainer preferred a swap over the scattered field-writes. Rather than swapping the heap-backed wrapper (which would reintroduce a per-tick allocation), add a <code>swap</code> member to the nested <code>IMPL</code> so the sampled stack <code>IMPL</code> can be swapped into the stored object — keeping zero per-tick allocation and reducing each multi-field <code>observe()</code> to a single <code>info-&gt;impl-&gt;swap( current )</code>.</p>
+        </div>
     </div>
 
     <!-- ============================================================ -->

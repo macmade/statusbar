@@ -40,13 +40,22 @@ namespace SB
             IMPL( const IMPL & o );
             ~IMPL();
 
+            friend void swap( IMPL & o1, IMPL & o2 ) noexcept
+            {
+                using std::swap;
+
+                swap( o1._capacity,    o2._capacity );
+                swap( o1._isCharging,  o2._isCharging );
+                swap( o1._isAvailable, o2._isAvailable );
+            }
+
             int64_t _capacity;
             bool    _isCharging;
             bool    _isAvailable;
 
             static void        init();
             static void        observe();
-            static BatteryInfo getBatteryInfo();
+            static IMPL        getBatteryInfo();
 
             static std::recursive_mutex * rmtx;
             static BatteryInfo          * info;
@@ -152,18 +161,16 @@ namespace SB
 
     void BatteryInfo::IMPL::observe()
     {
-        BatteryInfo current = IMPL::getBatteryInfo();
+        IMPL current = IMPL::getBatteryInfo();
 
         {
             std::lock_guard< std::recursive_mutex > l( *( IMPL::rmtx ) );
 
-            delete IMPL::info;
-
-            IMPL::info = new BatteryInfo( current );
+            swap( *( IMPL::info->impl ), current );
         }
     }
 
-    BatteryInfo BatteryInfo::IMPL::getBatteryInfo()
+    BatteryInfo::IMPL BatteryInfo::IMPL::getBatteryInfo()
     {
         CFTypeRef blob = IOPSCopyPowerSourcesInfo();
 

@@ -45,7 +45,7 @@ namespace SB
 
             static void    init();
             static void    observe();
-            static GPULoad getGPULoad();
+            static double  getGPULoad();
 
             static std::recursive_mutex * rmtx;
             static GPULoad              * info;
@@ -137,25 +137,23 @@ namespace SB
 
     void GPULoad::IMPL::observe()
     {
-        GPULoad current = IMPL::getGPULoad();
+        double current = IMPL::getGPULoad();
 
         {
             std::lock_guard< std::recursive_mutex > l( *( IMPL::rmtx ) );
 
-            delete IMPL::info;
-
-            IMPL::info = new GPULoad( current );
+            IMPL::info->impl->_percent = current;
         }
     }
 
-    GPULoad GPULoad::IMPL::getGPULoad()
+    double GPULoad::IMPL::getGPULoad()
     {
         CFMutableDictionaryRef matching = IOServiceMatching( kIOAcceleratorClassName );
         io_iterator_t          iterator;
 
         if( IOServiceGetMatchingServices( kIOMasterPortDefault, matching, &iterator ) != kIOReturnSuccess )
         {
-            return { -1 };
+            return -1;
         }
 
         io_registry_entry_t entry;
@@ -200,7 +198,7 @@ namespace SB
 
         IOObjectRelease( iterator );
         
-        return { std::max( std::max( device, renderer ), tiler ) };
+        return std::max( std::max( device, renderer ), tiler );
     }
 
     std::recursive_mutex * GPULoad::IMPL::rmtx      = nullptr;

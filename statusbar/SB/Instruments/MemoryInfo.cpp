@@ -43,6 +43,19 @@ namespace SB
             IMPL( const IMPL & o );
             ~IMPL();
 
+            friend void swap( IMPL & o1, IMPL & o2 ) noexcept
+            {
+                using std::swap;
+
+                swap( o1._total,       o2._total );
+                swap( o1._wired,       o2._wired );
+                swap( o1._active,      o2._active );
+                swap( o1._inactive,    o2._inactive );
+                swap( o1._free,        o2._free );
+                swap( o1._purgeable,   o2._purgeable );
+                swap( o1._speculative, o2._speculative );
+            }
+
             uint64_t _total;
             uint64_t _wired;
             uint64_t _active;
@@ -53,7 +66,7 @@ namespace SB
 
             static void       init();
             static void       observe();
-            static MemoryInfo getMemoryInfo();
+            static IMPL       getMemoryInfo();
 
             static std::recursive_mutex * rmtx;
             static MemoryInfo           * info;
@@ -205,18 +218,16 @@ namespace SB
 
     void MemoryInfo::IMPL::observe()
     {
-        MemoryInfo current = IMPL::getMemoryInfo();
+        IMPL current = IMPL::getMemoryInfo();
 
         {
             std::lock_guard< std::recursive_mutex > l( *( IMPL::rmtx ) );
 
-            delete IMPL::info;
-
-            IMPL::info = new MemoryInfo( current );
+            swap( *( IMPL::info->impl ), current );
         }
     }
 
-    MemoryInfo MemoryInfo::IMPL::getMemoryInfo()
+    MemoryInfo::IMPL MemoryInfo::IMPL::getMemoryInfo()
     {
         uint64_t total = 0;
 

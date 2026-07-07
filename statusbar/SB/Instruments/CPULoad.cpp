@@ -223,15 +223,10 @@ namespace SB
             {
                 std::lock_guard< std::recursive_mutex > l( *( IMPL::rmtx ) );
 
-                delete IMPL::load;
-
-                IMPL::load = new CPULoad
-                (
-                    ( user   / total ) * 100.0,
-                    ( system / total ) * 100.0,
-                    ( idle   / total ) * 100.0,
-                    ( used   / total ) * 100.0
-                );
+                IMPL::load->impl->_user   = ( user   / total ) * 100.0;
+                IMPL::load->impl->_system = ( system / total ) * 100.0;
+                IMPL::load->impl->_idle   = ( idle   / total ) * 100.0;
+                IMPL::load->impl->_total  = ( used   / total ) * 100.0;
             }
         }
     }

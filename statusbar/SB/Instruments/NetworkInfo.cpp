@@ -42,12 +42,20 @@ namespace SB
             IMPL( const IMPL & o );
             ~IMPL();
 
+            friend void swap( IMPL & o1, IMPL & o2 ) noexcept
+            {
+                using std::swap;
+
+                swap( o1._name,    o2._name );
+                swap( o1._address, o2._address );
+            }
+
             std::string _name;
             std::string _address;
 
             static void        init();
             static void        observe();
-            static NetworkInfo getNetworkInfo();
+            static IMPL        getNetworkInfo();
 
             static std::recursive_mutex * rmtx;
             static NetworkInfo          * info;
@@ -146,18 +154,16 @@ namespace SB
 
     void NetworkInfo::IMPL::observe()
     {
-        NetworkInfo current = IMPL::getNetworkInfo();
+        IMPL current = IMPL::getNetworkInfo();
 
         {
             std::lock_guard< std::recursive_mutex > l( *( IMPL::rmtx ) );
 
-            delete IMPL::info;
-
-            IMPL::info = new NetworkInfo( current );
+            swap( *( IMPL::info->impl ), current );
         }
     }
 
-    NetworkInfo NetworkInfo::IMPL::getNetworkInfo()
+    NetworkInfo::IMPL NetworkInfo::IMPL::getNetworkInfo()
     {
         struct ifaddrs * interfaces = nullptr;
 
