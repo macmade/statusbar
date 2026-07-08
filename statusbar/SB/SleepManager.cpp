@@ -60,6 +60,10 @@ namespace SB
 
     SleepManager & SleepManager::shared()
     {
+        /* Process-lifetime singleton: allocated once and never freed. The widget runs
+         * until 'q'/kill, so there is deliberately no shutdown/teardown path (which also
+         * avoids destroying state still in use by the detached run-loop thread below).
+         */
         static SleepManager * instance = nullptr;
         static std::once_flag once;
 
@@ -150,6 +154,14 @@ namespace SB
 
     void SleepManager::IMPL::run()
     {
+        /* Detached, process-lifetime run-loop thread: never joined or stopped
+         * (CFRunLoopRun blocks until the process exits). It is the app's only background
+         * thread besides the main render loop, and it is event-driven - it hosts the
+         * power-notification source and any CFRunLoopSources registered via
+         * addRunLoopSource (battery/network), waking only when those fire. The singleton
+         * it belongs to is intentionally leaked (see shared()), so the objects this
+         * thread touches stay alive for as long as it runs - no teardown to race with.
+         */
         std::thread
         (
             [ & ]

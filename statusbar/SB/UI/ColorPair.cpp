@@ -61,6 +61,7 @@ namespace SB
 
     ColorPair & ColorPair::shared()
     {
+        /* Process-lifetime singleton: allocated once and never freed (no shutdown path). */
         static ColorPair    * instance( nullptr );
         static std::once_flag once;
 

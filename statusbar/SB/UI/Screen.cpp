@@ -59,6 +59,7 @@ namespace SB
     
     Screen & Screen::shared()
     {
+        /* Process-lifetime singleton: allocated once and never freed (no shutdown path). */
         static Screen       * screen( nullptr );
         static std::once_flag once;
         

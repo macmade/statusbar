@@ -203,6 +203,9 @@ namespace SB
 
     void MemoryInfo::IMPL::init()
     {
+        /* Process-lifetime singletons: allocated once and never freed. The widget runs
+         * until 'q'/kill, so there is deliberately no shutdown/teardown path.
+         */
         static std::once_flag once;
 
         std::call_once

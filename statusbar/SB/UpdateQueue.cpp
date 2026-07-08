@@ -53,6 +53,9 @@ namespace SB
 
     UpdateQueue & UpdateQueue::shared()
     {
+        /* Process-lifetime singleton: allocated once and never freed. The widget runs
+         * until 'q'/kill, so there is deliberately no shutdown/teardown path.
+         */
         static UpdateQueue  * queue;
         static std::once_flag once;
 

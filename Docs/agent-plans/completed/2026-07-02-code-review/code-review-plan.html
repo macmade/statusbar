@@ -802,11 +802,20 @@ va_end( ap );</code></pre>
             <li>No functional verification needed beyond confirming the build is unchanged.</li>
         </ul>
         <p><span class="label">Status</span></p>
-        <p><span class="pill st-notstarted">Not started</span></p>
+        <p><span class="pill st-completed">Completed</span></p>
         <p><span class="label">Completed</span></p>
-        <p class="fill"></p>
+        <p class="fill">2026-07-08</p>
         <p><span class="label">Implementation notes</span></p>
-        <p class="fill"></p>
+        <div class="fill">
+            <p><strong>Documentation only</strong> (agreed scope: thread + all singletons; no structural conversion). Added a <code>/* ... */</code> comment at every process-lifetime site making the intentional-leak / no-teardown model explicit. Note the sites shifted from the plan's original references (<code>UpdateQueue.cpp</code> and <code>CPULoad.cpp</code> no longer have detached threads — M15 removed them), so the current sites were re-derived by grep.</p>
+            <ul>
+                <li><strong>Detached thread (1 site):</strong> <code>SleepManager::IMPL::run()</code> — a fuller comment noting the thread is detached and never joined/stopped (<code>CFRunLoopRun</code> blocks until process exit), is the only background thread besides the main render loop, is <em>event-driven</em> (hosts the power-notification source plus the battery/network sources added via <code>addRunLoopSource</code>, waking only when they fire), and that the owning singleton is intentionally leaked so the objects it touches outlive any teardown.</li>
+                <li><strong>Singletons (10 sites):</strong> a concise "allocated once and never freed; no shutdown/teardown path" comment at each <code>shared()</code> (<code>SleepManager</code>, <code>UpdateQueue</code>, <code>ColorPair</code>, <code>Screen</code>) and each instrument <code>init()</code> (<code>CPULoad</code>, <code>GPULoad</code>, <code>MemoryInfo</code>, <code>BatteryInfo</code>, <code>NetworkInfo</code>, <code>TemperatureInfo</code>). The <code>SleepManager::shared()</code> comment additionally notes the leak avoids destroying state still in use by the detached thread.</li>
+            </ul>
+            <p><strong>Function-local (Meyers) statics — deliberately not done</strong> (task 2, "ask before"): confirmed with the maintainer to keep the existing <code>static T * + new</code> pattern. Converting to value statics is infeasible under the project's <code>-Werror</code> + <code>-Wexit-time-destructors</code> (a long-lived value of a non-trivial type is rejected — the very reason this pattern exists, per M14), and it would introduce exit-time destruction that races with the still-running detached <code>SleepManager</code> thread — the opposite of the intended model.</p>
+            <p>Comments-only, so no behavior change. Verified the build is unchanged: <code>xcodebuild ... -configuration Debug build</code> <strong>BUILD SUCCEEDED</strong>, no warnings under <code>-Werror</code>. During self-review I corrected one initial comment that mislabeled the <code>SleepManager</code> thread as "periodic-capable" — it is event-driven; the periodic driver is the main render loop.</p>
+            <p><strong>Automated review loop:</strong> 1 round, converged. A fresh-context reviewer verified (via <code>git diff</code>/<code>git diff --check</code>) that every hunk is a pure comment addition with no code change and no whitespace/format churn, and checked every clause of every comment against the code: each <code>shared()</code>/<code>init()</code> really uses <code>static</code>-pointer + <code>call_once</code>/<code>new</code> and is never <code>delete</code>d (destructors exist but never run); the only <code>std::thread</code>/<code>.detach()</code> in the whole project is the SleepManager one; the power + battery/network source attribution is correct; and the main render loop is the periodic driver. No Critical/High/Medium/Low/Info findings.</p>
+        </div>
         <p><span class="label">Review comments</span></p>
         <p class="fill"></p>
     </div>
