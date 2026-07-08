@@ -52,6 +52,7 @@ namespace SB
                    void sleepCallback( Event e );
 
             std::vector< std::pair< UUID, std::function< void( Event ) > > > _callbacks;
+            std::vector< CFRunLoopSourceRef >                                _pendingSources;
             CFRunLoopRef                                                     _rl;
             std::recursive_mutex                                             _rmtx;
             io_connect_t                                                     _rootPort;
@@ -110,6 +111,22 @@ namespace SB
         );
     }
 
+    void SleepManager::addRunLoopSource( CFRunLoopSourceRef source )
+    {
+        std::lock_guard< std::recursive_mutex > l( this->impl->_rmtx );
+
+        if( this->impl->_rl != nullptr )
+        {
+            CFRunLoopAddSource( this->impl->_rl, source, kCFRunLoopCommonModes );
+            CFRunLoopWakeUp( this->impl->_rl );
+        }
+        else
+        {
+            /* The run loop is not up yet - queue the source so run() adds it on startup. */
+            this->impl->_pendingSources.push_back( source );
+        }
+    }
+
     SleepManager::IMPL::IMPL():
         _rl( nullptr )
     {
@@ -137,10 +154,15 @@ namespace SB
         (
             [ & ]
             {
-                IONotificationPortRef notifyPort;
-                io_object_t           notifier;
-                io_connect_t          rootPort = IORegisterForSystemPower( this, &notifyPort, IMPL::sleepCallback, &notifier );
+                IONotificationPortRef notifyPort = nullptr;
+                io_object_t           notifier   = 0;
+                io_connect_t          rootPort   = IORegisterForSystemPower( this, &notifyPort, IMPL::sleepCallback, &notifier );
 
+                /* If power registration fails we do not publish the run loop: without the
+                 * power source the loop could go empty and CFRunLoopRun would return,
+                 * leaving _rl dangling on a dead thread. Leaving _rl null keeps any hosted
+                 * sources safely queued (unserviced) rather than risking a use-after-free.
+                 */
                 if( rootPort == MACH_PORT_NULL )
                 {
                     return;
@@ -148,11 +170,21 @@ namespace SB
 
                 CFRunLoopRef rl = CFRunLoopGetCurrent();
 
+                /* Publish the run loop and attach any sources that were queued before it
+                 * existed (e.g. battery/network notification sources).
+                 */
                 {
                     std::lock_guard< std::recursive_mutex > l( this->_rmtx );
 
                     this->_rl       = rl;
                     this->_rootPort = rootPort;
+
+                    for( CFRunLoopSourceRef source: this->_pendingSources )
+                    {
+                        CFRunLoopAddSource( rl, source, kCFRunLoopCommonModes );
+                    }
+
+                    this->_pendingSources.clear();
                 }
 
                 CFRunLoopAddSource( rl, IONotificationPortGetRunLoopSource( notifyPort ), kCFRunLoopCommonModes );

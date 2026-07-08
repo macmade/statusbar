@@ -25,6 +25,7 @@
 		05D670F629CDDA2E000B2F56 /* Window.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 05D670F429CDDA2E000B2F56 /* Window.cpp */; };
 		05D670F929CDE15B000B2F56 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 05D670F829CDE15B000B2F56 /* CoreFoundation.framework */; };
 		05D670FB29CDE160000B2F56 /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 05D670FA29CDE160000B2F56 /* IOKit.framework */; };
+		05D670FC29CDE160000B2F56 /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 05D670FD29CDE160000B2F56 /* SystemConfiguration.framework */; };
 		05D6711629CDE46F000B2F56 /* BatteryInfo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 05D6711429CDE46F000B2F56 /* BatteryInfo.cpp */; };
 		05D6711929CDF5CE000B2F56 /* MemoryInfo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 05D6711729CDF5CE000B2F56 /* MemoryInfo.cpp */; };
 		05DBEC1529FA5FFB009624EA /* UUID.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 05DBEC1429FA5FFB009624EA /* UUID.cpp */; };
@@ -122,6 +123,7 @@
 		05D670F729CDDA5A000B2F56 /* Casts.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Casts.hpp; sourceTree = "<group>"; };
 		05D670F829CDE15B000B2F56 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
 		05D670FA29CDE160000B2F56 /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = System/Library/Frameworks/IOKit.framework; sourceTree = SDKROOT; };
+		05D670FD29CDE160000B2F56 /* SystemConfiguration.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SystemConfiguration.framework; path = System/Library/Frameworks/SystemConfiguration.framework; sourceTree = SDKROOT; };
 		05D6711429CDE46F000B2F56 /* BatteryInfo.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = BatteryInfo.cpp; sourceTree = "<group>"; };
 		05D6711529CDE46F000B2F56 /* BatteryInfo.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = BatteryInfo.hpp; sourceTree = "<group>"; };
 		05D6711729CDF5CE000B2F56 /* MemoryInfo.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = MemoryInfo.cpp; sourceTree = "<group>"; };
@@ -136,6 +138,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				05D670FB29CDE160000B2F56 /* IOKit.framework in Frameworks */,
+				05D670FC29CDE160000B2F56 /* SystemConfiguration.framework in Frameworks */,
 				05D670F929CDE15B000B2F56 /* CoreFoundation.framework in Frameworks */,
 				0581834A22E9AE24008D1BFF /* libncurses.tbd in Frameworks */,
 			);
@@ -148,6 +151,7 @@
 			isa = PBXGroup;
 			children = (
 				05D670FA29CDE160000B2F56 /* IOKit.framework */,
+				05D670FD29CDE160000B2F56 /* SystemConfiguration.framework */,
 				05D670F829CDE15B000B2F56 /* CoreFoundation.framework */,
 				0581834922E9AE24008D1BFF /* libncurses.tbd */,
 			);

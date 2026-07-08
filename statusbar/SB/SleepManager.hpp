@@ -27,6 +27,7 @@
 
 #include <functional>
 #include <vector>
+#include <CoreFoundation/CFRunLoop.h>
 #include "SB/UUID.hpp"
 
 namespace SB
@@ -50,6 +51,7 @@ namespace SB
 
             UUID subscribe( const std::function< void( Event ) > & callback );
             void unsubscribe( const UUID & uuid );
+            void addRunLoopSource( CFRunLoopSourceRef source );
 
         private:
 

@@ -24,8 +24,8 @@
 
 #include "SB/Instruments/BatteryInfo.hpp"
 #include "SB/UpdateQueue.hpp"
+#include "SB/SleepManager.hpp"
 #include <mutex>
-#include <thread>
 #include <chrono>
 #include <CoreFoundation/CoreFoundation.h>
 #include <IOKit/ps/IOPowerSources.h>
@@ -56,6 +56,7 @@ namespace SB
             static void        init();
             static void        observe();
             static IMPL        getBatteryInfo();
+            static void        powerSourceCallback( void * context );
 
             static std::recursive_mutex * rmtx;
             static BatteryInfo          * info;
@@ -65,16 +66,36 @@ namespace SB
     void BatteryInfo::startObserving()
     {
         BatteryInfo::IMPL::init();
-        std::lock_guard< std::recursive_mutex > l( *( IMPL::rmtx ) );
 
-        if( IMPL::observing )
         {
+            std::lock_guard< std::recursive_mutex > l( *( IMPL::rmtx ) );
+
+            if( IMPL::observing )
+            {
+                return;
+            }
+
+            IMPL::observing = true;
+        }
+
+        /* The notification source only fires on change, so sample the current value once. */
+        IMPL::observe();
+
+        CFRunLoopSourceRef source = IOPSNotificationCreateRunLoopSource( IMPL::powerSourceCallback, nullptr );
+
+        if( source == nullptr )
+        {
+            /* Fall back to polling if the notification source cannot be created. */
+            SB::UpdateQueue::shared().registerUpdate( [] { IMPL::observe(); }, std::chrono::seconds( 10 ) );
+
             return;
         }
 
-        IMPL::observing = true;
-
-        SB::UpdateQueue::shared().registerUpdate( [] { IMPL::observe(); }, std::chrono::seconds( 10 ) );
+        /* Event-driven: host the source on SleepManager's shared run loop. The source
+         * lives for the process lifetime and is intentionally never released (see the
+         * thread/singleton lifetime model documented in M18).
+         */
+        SB::SleepManager::shared().addRunLoopSource( source );
     }
 
     BatteryInfo BatteryInfo::current()
@@ -168,6 +189,13 @@ namespace SB
 
             swap( *( IMPL::info->impl ), current );
         }
+    }
+
+    void BatteryInfo::IMPL::powerSourceCallback( void * context )
+    {
+        ( void )context;
+
+        IMPL::observe();
     }
 
     BatteryInfo::IMPL BatteryInfo::IMPL::getBatteryInfo()

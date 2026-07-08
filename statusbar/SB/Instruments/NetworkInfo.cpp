@@ -24,13 +24,15 @@
 
 #include "SB/Instruments/NetworkInfo.hpp"
 #include "SB/UpdateQueue.hpp"
+#include "SB/SleepManager.hpp"
 #include <mutex>
-#include <thread>
 #include <chrono>
 #include <ifaddrs.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <CoreFoundation/CoreFoundation.h>
+#include <SystemConfiguration/SystemConfiguration.h>
 
 namespace SB
 {
@@ -56,6 +58,7 @@ namespace SB
             static void        init();
             static void        observe();
             static IMPL        getNetworkInfo();
+            static void        dynamicStoreCallback( SCDynamicStoreRef store, CFArrayRef changedKeys, void * context );
 
             static std::recursive_mutex * rmtx;
             static NetworkInfo          * info;
@@ -65,16 +68,76 @@ namespace SB
     void NetworkInfo::startObserving()
     {
         NetworkInfo::IMPL::init();
-        std::lock_guard< std::recursive_mutex > l( *( IMPL::rmtx ) );
 
-        if( IMPL::observing )
         {
+            std::lock_guard< std::recursive_mutex > l( *( IMPL::rmtx ) );
+
+            if( IMPL::observing )
+            {
+                return;
+            }
+
+            IMPL::observing = true;
+        }
+
+        /* The notification source only fires on change, so sample the current value once. */
+        IMPL::observe();
+
+        /* Fall back to polling if event-driven monitoring cannot be set up. */
+        auto registerPoll = []
+        {
+            SB::UpdateQueue::shared().registerUpdate( [] { IMPL::observe(); }, std::chrono::seconds( 5 ) );
+        };
+
+        SCDynamicStoreRef store = SCDynamicStoreCreate( nullptr, CFSTR( "statusbar" ), IMPL::dynamicStoreCallback, nullptr );
+
+        if( store == nullptr )
+        {
+            registerPoll();
+
             return;
         }
 
-        IMPL::observing = true;
+        CFStringRef key = SCDynamicStoreKeyCreateNetworkGlobalEntity( nullptr, kSCDynamicStoreDomainState, kSCEntNetIPv4 );
 
-        SB::UpdateQueue::shared().registerUpdate( [] { IMPL::observe(); }, std::chrono::seconds( 5 ) );
+        if( key == nullptr )
+        {
+            CFRelease( store );
+            registerPoll();
+
+            return;
+        }
+
+        const void * keys[] = { key };
+        CFArrayRef   watch  = CFArrayCreate( nullptr, keys, 1, &kCFTypeArrayCallBacks );
+        Boolean      set    = SCDynamicStoreSetNotificationKeys( store, watch, nullptr );
+
+        CFRelease( watch );
+        CFRelease( key );
+
+        if( set == false )
+        {
+            CFRelease( store );
+            registerPoll();
+
+            return;
+        }
+
+        CFRunLoopSourceRef source = SCDynamicStoreCreateRunLoopSource( nullptr, store, 0 );
+
+        if( source == nullptr )
+        {
+            CFRelease( store );
+            registerPoll();
+
+            return;
+        }
+
+        /* Event-driven: host the source on SleepManager's shared run loop. The source
+         * (which retains the store) lives for the process lifetime and is intentionally
+         * never released (see the thread/singleton lifetime model documented in M18).
+         */
+        SB::SleepManager::shared().addRunLoopSource( source );
     }
 
     NetworkInfo NetworkInfo::current()
@@ -161,6 +224,15 @@ namespace SB
 
             swap( *( IMPL::info->impl ), current );
         }
+    }
+
+    void NetworkInfo::IMPL::dynamicStoreCallback( SCDynamicStoreRef store, CFArrayRef changedKeys, void * context )
+    {
+        ( void )store;
+        ( void )changedKeys;
+        ( void )context;
+
+        IMPL::observe();
     }
 
     NetworkInfo::IMPL NetworkInfo::IMPL::getNetworkInfo()
