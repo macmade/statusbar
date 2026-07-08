@@ -147,7 +147,7 @@ namespace SB
                 IMPL::smcCache  = new std::map< uint32_t, SMCKeyInfoData >();
 
                 {
-                    io_service_t smc = IOServiceGetMatchingService( kIOMasterPortDefault, IOServiceMatching( "AppleSMC" ) );
+                    io_service_t smc = IOServiceGetMatchingService( kIOMainPortDefault, IOServiceMatching( "AppleSMC" ) );
 
                     if( smc != IO_OBJECT_NULL )
                     {

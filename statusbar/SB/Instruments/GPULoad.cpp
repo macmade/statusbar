@@ -151,7 +151,7 @@ namespace SB
         CFMutableDictionaryRef matching = IOServiceMatching( kIOAcceleratorClassName );
         io_iterator_t          iterator;
 
-        if( IOServiceGetMatchingServices( kIOMasterPortDefault, matching, &iterator ) != kIOReturnSuccess )
+        if( IOServiceGetMatchingServices( kIOMainPortDefault, matching, &iterator ) != kIOReturnSuccess )
         {
             return -1;
         }

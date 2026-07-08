@@ -770,11 +770,17 @@ va_end( ap );</code></pre>
             <li>Verify a clean build with no deprecation warnings on the current toolchain.</li>
         </ul>
         <p><span class="label">Status</span></p>
-        <p><span class="pill st-notstarted">Not started</span></p>
+        <p><span class="pill st-completed">Completed</span></p>
         <p><span class="label">Completed</span></p>
-        <p class="fill"></p>
+        <p class="fill">2026-07-08</p>
         <p><span class="label">Implementation notes</span></p>
-        <p class="fill"></p>
+        <div class="fill">
+            <p><strong>Investigation (the plan's suggested approach did not apply):</strong> checked the SDK (<code>IOKitLib.h</code>) and found both <code>kIOMainPortDefault</code> and <code>kIOMasterPortDefault</code> are <code>extern const mach_port_t</code> <em>variables</em>, not <code>#define</code> macros — so the plan's <code>#ifndef kIOMainPortDefault … #define …</code> compatibility trick cannot work (the preprocessor can't detect an extern const). <code>kIOMainPortDefault</code> is <code>__API_AVAILABLE(macos(12.0))</code>; <code>kIOMasterPortDefault</code> is <code>__API_DEPRECATED_WITH_REPLACEMENT("kIOMainPortDefault", macos(10.0, 12.0))</code>. Both are documented synonyms for NULL. At the previous <strong>10.14</strong> deployment target the deprecation was <em>suppressed</em> (target &lt; the 12.0 deprecation version), so no warning fired and the switch to <code>kIOMainPortDefault</code> was impossible without an availability guard.</p>
+            <p><strong>Decision (maintainer):</strong> raise <code>MACOSX_DEPLOYMENT_TARGET</code> from <code>10.14</code> to <strong>12.4</strong> (both the Debug and Release <code>XCBuildConfiguration</code> blocks in <code>project.pbxproj</code>), which both makes <code>kIOMainPortDefault</code> available and activates the <code>-Wdeprecated-declarations</code> error on the old name — so the rename is now necessary as well as possible.</p>
+            <p><strong>Change:</strong> replaced <code>kIOMasterPortDefault</code> with <code>kIOMainPortDefault</code> at the two (and only) call sites — <code>IOServiceGetMatchingServices(...)</code> in <code>GPULoad.cpp</code> and <code>IOServiceGetMatchingService(...)</code> in <code>TemperatureInfo.cpp</code>. The constants are documented synonyms for NULL, so behavior is unchanged. A tree-wide grep confirmed no other <code>kIOMasterPortDefault</code>/<code>IOMasterPort</code> references remain.</p>
+            <p>Verified with a <strong>clean</strong> <code>xcodebuild ... build</code>: <strong>BUILD SUCCEEDED</strong>, no warnings and no deprecation diagnostics under <code>-Werror</code> at the new 12.4 target — confirming the target bump did not surface any other newly-active deprecations in the codebase.</p>
+            <p><strong>Automated review loop:</strong> 1 round, converged. The fresh-context reviewer confirmed <code>kIOMainPortDefault</code> is the correct semantically-identical replacement, the two sites are the only uses (no leftovers), the change was necessary under <code>-Werror</code> at target ≥ 12.0, both pbxproj configs were updated consistently (and no xcconfig overrides the target), and a bump from 10.14→12.4 activates no other deprecations for the system APIs in use. No Critical/High/Medium/Low findings; one Info note that a 12.0 target would technically have sufficed for this constant (12.4 is the maintainer's explicit choice, harmless).</p>
+        </div>
         <p><span class="label">Review comments</span></p>
         <p class="fill"></p>
     </div>
